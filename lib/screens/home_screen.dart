@@ -1,34 +1,26 @@
 import 'package:flutter/material.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class DashboardScreen extends StatelessWidget {
+  const DashboardScreen({super.key});
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-
       appBar: AppBar(
         title: const Text(
-          "TripMates",
-          style: TextStyle(color: Colors.white),
+          'Dashboard',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        backgroundColor: const Color(0xff7A33FF),
-        centerTitle: true,
+        backgroundColor: const Color(0xFF4636F2),
       ),
 
       body: Center(
         child: Text(
-          "Welcome to Home",
+          "Welcome to TripMates",
           style: TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.bold,
-            color: Colors.grey.shade800,
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: Colors.grey[800],
           ),
         ),
       ),

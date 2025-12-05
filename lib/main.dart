@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'app.dart';
+import 'package:tripmates/app.dart';
 
 void main() {
-  runApp(const TripMatesApp());
+  runApp(const App());
 }

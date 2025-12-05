@@ -1,279 +1,200 @@
 import 'package:flutter/material.dart';
+import 'package:tripmates/screens/login_screen.dart';
+import 'package:tripmates/utils/validator_util.dart';
+import 'package:tripmates/widgets/main_text_form_field.dart';
+import 'package:tripmates/widgets/my_button.dart';
+import 'package:flutter/gestures.dart';
 
-class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+class SigninScreen extends StatefulWidget {
+  const SigninScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  State<SigninScreen> createState() => _SigninScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
-  bool _obscure1 = true;
-  bool _obscure2 = true;
+class _SigninScreenState extends State<SigninScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _fullnameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _createPasswordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  bool _obscurePassword = true;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      backgroundColor: Colors.white,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final bool isTablet = constraints.maxWidth >= 600;
 
-              /// ------------------- Logo + Name -------------------
-              Row(
-                children: [
-                  Image.asset(
-                    "assets/images/logo.png",
-                    height: 55,
-                  ),
-                  const SizedBox(width: 10),
-                  const Text(
-                    "Trip Mate",
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF4CAF50),
-                    ),
-                  ),
-                ],
-              ),
+          final double horizontalPadding = isTablet ? 48 : 16;
+          final double verticalSpacing = isTablet ? 28 : 16;
+          final double imageHeight = isTablet ? 260 : 190;
+          final double imageWidth = isTablet ? 300 : 228;
+          final double titleFontSize = isTablet ? 32 : 20;
 
-              const SizedBox(height: 35),
-
-              /// ------------------- Heading -------------------
-              const Text(
-                "Let’s Get start !",
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF3F51B5),
-                ),
-              ),
-              const SizedBox(height: 5),
-
-              const Center(
-                child: Text(
-                  "Sign Up",
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 25),
-
-              /// ------------------- Gmail Input -------------------
-              const Text(
-                "Gmail",
-                style: TextStyle(
-                  fontSize: 15,
-                  color: Color(0xFF3F51B5),
-                ),
-              ),
-              const SizedBox(height: 8),
-              _buildInputField("Enter your mail address"),
-
-              const SizedBox(height: 20),
-
-              /// ------------------- Name Input -------------------
-              const Text(
-                "Name",
-                style: TextStyle(
-                  fontSize: 15,
-                  color: Color(0xFF3F51B5),
-                ),
-              ),
-              const SizedBox(height: 8),
-              _buildInputField("Enter your full name"),
-
-              const SizedBox(height: 20),
-
-              /// ------------------- Password -------------------
-              const Text(
-                "Password",
-                style: TextStyle(
-                  fontSize: 15,
-                  color: Color(0xFF3F51B5),
-                ),
-              ),
-              const SizedBox(height: 8),
-              _buildPasswordField(
-                "Enter new password",
-                _obscure1,
-                () => setState(() => _obscure1 = !_obscure1),
-              ),
-
-              const SizedBox(height: 20),
-
-              /// ------------------- Confirm Password -------------------
-              const Text(
-                "Confirm Password",
-                style: TextStyle(
-                  fontSize: 15,
-                  color: Color(0xFF3F51B5),
-                ),
-              ),
-              const SizedBox(height: 8),
-              _buildPasswordField(
-                "Confirm password",
-                _obscure2,
-                () => setState(() => _obscure2 = !_obscure2),
-              ),
-
-              const SizedBox(height: 35),
-
-              /// ------------------- Sign Up Button -------------------
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: () {Navigator.pushReplacementNamed(context, '/login');},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4636F2),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    "Sign Up",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 18),
-
-              /// ------------------- Login Link -------------------
-              Center(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+          return SafeArea(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                child: Column(
                   children: [
-                    const Text(
-                      "Already have an account?  ",
-                      style: TextStyle(fontSize: 15),
+
+                    Center(
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        height: imageHeight,
+                        width: imageWidth,
+                      ),
                     ),
-                    GestureDetector(
-                      onTap: () {
-                        Navigator.pushReplacementNamed(context, '/login');
-                      },
-                      child: const Text(
-                        "Log In",
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: Color(0xFF3F51B5),
-                          decoration: TextDecoration.underline,
-                        ),
+
+                    const SizedBox(height: 12),
+
+                    Text(
+                      "Create your TripMates account",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: titleFontSize,
+                      ),
+                    ),
+
+                    SizedBox(height: isTablet ? 50 : 30),
+
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        children: [
+                          MainTextFormField(
+                            controller: _fullnameController,
+                            prefixIcon: Icons.person_2_outlined,
+                            hintText: "Enter your full name",
+                            label: "Full Name",
+                            validator: (value) =>
+                                ValidatorUtil.fullnameValidator(value),
+                          ),
+
+                          SizedBox(height: verticalSpacing),
+
+                          MainTextFormField(
+                            keyboardType: TextInputType.phone,
+                            prefixIcon: Icons.phone_iphone_outlined,
+                            controller: _phoneController,
+                            hintText: "Enter your phone number",
+                            label: "Mobile Number",
+                            validator: ValidatorUtil.phoneNumberValidator,
+                          ),
+
+                          SizedBox(height: verticalSpacing),
+
+                          MainTextFormField(
+                            prefixIcon: Icons.lock_outline,
+                            controller: _createPasswordController,
+                            hintText: "Enter a password",
+                            label: "Create Password",
+                            validator: (value) =>
+                                ValidatorUtil.passwordValidator(value),
+                            obscureText: _obscurePassword,
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                color: Colors.grey,
+                              ),
+                              onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
+                            ),
+                          ),
+
+                          SizedBox(height: verticalSpacing),
+
+                          MainTextFormField(
+                            prefixIcon: Icons.lock_outline,
+                            controller: _confirmPasswordController,
+                            hintText: "Re-type the password",
+                            label: "Confirm Password",
+                            validator: (value) {
+                              return ValidatorUtil.confirmPasswordValidator(
+                                originalPassword:
+                                    _createPasswordController.text,
+                                value: value,
+                              );
+                            },
+                            obscureText: _obscurePassword,
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                color: Colors.grey,
+                              ),
+                              onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
+                            ),
+                          ),
+
+                          SizedBox(height: verticalSpacing),
+
+                          PrimaryButtonWidget(
+                            onPressed: () {
+                              if (_formKey.currentState?.validate() == true) {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const LoginScreen(),
+                                  ),
+                                );
+                              }
+                            },
+                            text: "Sign Up",
+                          ),
+
+                          SizedBox(height: isTablet ? 36 : 16),
+
+                          RichText(
+                            text: TextSpan(
+                              style: TextStyle(
+                                color: const Color(0xFF7A7A7A),
+                                fontSize: isTablet ? 20 : 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              children: [
+                                const TextSpan(text: "Already have an account? "),
+                                TextSpan(
+                                  text: "Login",
+                                  style: const TextStyle(
+                                    color: Color(0xFF4636F2),
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                  recognizer: TapGestureRecognizer()
+                                    ..onTap = () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              const LoginScreen(),
+                                        ),
+                                      );
+                                    },
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          SizedBox(height: isTablet ? 60 : 30),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// ------------------- Normal Input -------------------
-  Widget _buildInputField(String hint) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE4E0F7),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: TextField(
-        decoration: InputDecoration(
-          hintText: hint,
-          border: InputBorder.none,
-        ),
-      ),
-    );
-  }
-
-  /// ------------------- Password Input -------------------
-  Widget _buildPasswordField(
-    String hint,
-    bool obscure,
-    VoidCallback onToggle,
-  ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE4E0F7),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: TextField(
-        obscureText: obscure,
-        decoration: InputDecoration(
-          hintText: hint,
-          border: InputBorder.none,
-          suffixIcon: IconButton(
-            icon: Icon(
-              obscure ? Icons.visibility_off : Icons.visibility,
-              color: Colors.black54,
             ),
-            onPressed: onToggle,
-          ),
-        ),
+          );
+        },
       ),
     );
   }
 }
-// import 'package:flutter/material.dart';
-// import '../widgets/my_text_field.dart';
-// import '../widgets/my_button.dart';
-
-// class RegisterScreen extends StatelessWidget {
-//   const RegisterScreen({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       body: Padding(
-//         padding: const EdgeInsets.all(20),
-
-//         child: Column(
-//           mainAxisAlignment: MainAxisAlignment.center,
-//           children: [
-
-//             const Text(
-//               "Create Account",
-//               style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-//             ),
-
-//             const SizedBox(height: 20),
-
-//             MyTextField(label: "Full Name", icon: Icons.person),
-//             const SizedBox(height: 15),
-
-//             MyTextField(label: "Email", icon: Icons.email),
-//             const SizedBox(height: 15),
-
-//             MyTextField(label: "Password", icon: Icons.lock, isPassword: true),
-
-//             const SizedBox(height: 25),
-
-//             MyButton(
-//               text: "Register",
-//               onPressed: () {
-//                 Navigator.pushReplacementNamed(context, '/login');
-//               },
-//             )
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }

@@ -1,31 +1,44 @@
 import 'package:flutter/material.dart';
 
-class MyButton extends StatelessWidget {
-  final String text;
-  final VoidCallback onPressed;
-
-  const MyButton({
+class PrimaryButtonWidget extends StatelessWidget {
+  const PrimaryButtonWidget({
     super.key,
-    required this.text,
     required this.onPressed,
+    required this.text,
   });
+
+  final VoidCallback onPressed;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final isTablet = width >= 600;
+
+    final double buttonHeight = isTablet ? 62 : 56;
+    final double fontSize = isTablet ? 20 : 18;
+    final double horizontalPadding = isTablet ? 40 : 20;
+
     return SizedBox(
       width: double.infinity,
-      height: 50,
-
       child: ElevatedButton(
-        onPressed: onPressed,
         style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF4636F2), // TripMates primary button (purple)
+          minimumSize: Size(double.infinity, buttonHeight),
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12)),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          elevation: 0,
         ),
-
+        onPressed: onPressed,
         child: Text(
           text,
-          style: const TextStyle(fontSize: 18),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: fontSize,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
