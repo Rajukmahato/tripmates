@@ -23,7 +23,7 @@ class PrimaryButtonWidget extends StatelessWidget {
       width: double.infinity,
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF4636F2), // TripMates primary button (purple)
+          backgroundColor: const Color(0xFF4636F2),
           minimumSize: Size(double.infinity, buttonHeight),
           padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
           shape: RoundedRectangleBorder(
