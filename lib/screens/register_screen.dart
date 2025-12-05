@@ -131,7 +131,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {Navigator.pushReplacementNamed(context, '/login');},
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF4636F2),
                     shape: RoundedRectangleBorder(
@@ -163,7 +163,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     GestureDetector(
                       onTap: () {
-                        Navigator.pop(context);
+                        Navigator.pushReplacementNamed(context, '/login');
                       },
                       child: const Text(
                         "Log In",
@@ -231,3 +231,49 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 }
+// import 'package:flutter/material.dart';
+// import '../widgets/my_text_field.dart';
+// import '../widgets/my_button.dart';
+
+// class RegisterScreen extends StatelessWidget {
+//   const RegisterScreen({super.key});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       body: Padding(
+//         padding: const EdgeInsets.all(20),
+
+//         child: Column(
+//           mainAxisAlignment: MainAxisAlignment.center,
+//           children: [
+
+//             const Text(
+//               "Create Account",
+//               style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+//             ),
+
+//             const SizedBox(height: 20),
+
+//             MyTextField(label: "Full Name", icon: Icons.person),
+//             const SizedBox(height: 15),
+
+//             MyTextField(label: "Email", icon: Icons.email),
+//             const SizedBox(height: 15),
+
+//             MyTextField(label: "Password", icon: Icons.lock, isPassword: true),
+
+//             const SizedBox(height: 25),
+
+//             MyButton(
+//               text: "Register",
+//               onPressed: () {
+//                 Navigator.pushReplacementNamed(context, '/login');
+//               },
+//             )
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }

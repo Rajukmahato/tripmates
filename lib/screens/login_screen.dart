@@ -145,7 +145,9 @@ class _LoginPageState extends State<LoginPage> {
   width: double.infinity,
   height: 56,
   child: ElevatedButton(
-    onPressed: () {},
+    onPressed: () {
+      Navigator.pushReplacementNamed(context, "/home");
+    },
     style: ElevatedButton.styleFrom(
       backgroundColor: const Color(0xFF4636F2), // Rich purple
       shape: RoundedRectangleBorder(
@@ -167,18 +169,23 @@ class _LoginPageState extends State<LoginPage> {
 
               // Register
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Text("Don’t have an account? "),
-                  Text(
-                    "Register here",
-                    style: TextStyle(
-                      color: Color(0xFF4737D6),
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                ],
-              ),
+  mainAxisAlignment: MainAxisAlignment.center,
+  children: [
+    const Text("Don’t have an account? "),
+    GestureDetector(
+      onTap: () {
+        Navigator.pushReplacementNamed(context, "/register");
+      },
+      child: const Text(
+        "Register here",
+        style: TextStyle(
+          color: Color(0xFF4737D6),
+          decoration: TextDecoration.underline,
+        ),
+      ),
+    ),
+  ],
+),
             ],
           ),
         ),
@@ -186,3 +193,59 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+// import 'package:flutter/material.dart';
+// import '../widgets/my_text_field.dart';
+// import '../widgets/my_button.dart';
+
+// class LoginScreen extends StatelessWidget {
+//   const LoginScreen({super.key});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       body: Padding(
+//         padding: const EdgeInsets.all(20),
+
+//         child: Column(
+//           mainAxisAlignment: MainAxisAlignment.center,
+//           children: [
+
+//             Image.asset('assets/images/logo.png', width: 120),
+
+//             const SizedBox(height: 30),
+
+//             MyTextField(
+//               label: "Email",
+//               icon: Icons.email,
+//             ),
+
+//             const SizedBox(height: 15),
+
+//             MyTextField(
+//               label: "Password",
+//               icon: Icons.lock,
+//               isPassword: true,
+//             ),
+
+//             const SizedBox(height: 25),
+
+//             MyButton(
+//               text: "Login",
+//               onPressed: () {
+//                 Navigator.pushNamed(context, '/home');
+//               },
+//             ),
+
+//             TextButton(
+//               onPressed: () {
+//                 Navigator.pushNamed(context, '/register');
+//               },
+//               child: const Text("Don't have an account? Register"),
+//             ),
+
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
