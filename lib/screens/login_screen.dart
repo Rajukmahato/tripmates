@@ -128,7 +128,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           TextButton(
                             onPressed: () {
-                              // TODO: forgot password flow
                             },
                             child: Text(
                               "Forgot your password ?",
