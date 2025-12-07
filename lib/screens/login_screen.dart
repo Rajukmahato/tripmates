@@ -90,7 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         prefixIcon: Icons.phone_iphone_outlined,
                         controller: _phoneController,
                         hintText: "Enter your mobile number",
-                        label: "Mobile Number",
+                        label: "Mobile number",
                         validator: ValidatorUtil.phoneNumberValidator,
                       ),
 
