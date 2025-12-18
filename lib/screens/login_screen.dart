@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:tripmates/screens/home_screen.dart';
 import 'package:tripmates/screens/register_screen.dart';
 import 'package:tripmates/utils/validator_util.dart';
 import 'package:tripmates/widgets/main_text_form_field.dart';
 import 'package:tripmates/widgets/my_button.dart';
 import 'package:flutter/gestures.dart';
+import 'package:tripmates/screens/bottom_navigation_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -46,11 +46,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(width: 10),
                     const Text(
-                      "Trip Mate",
+                      "TripMate",
                       style: TextStyle(
-                        fontSize: 24,
+                        fontFamily: "OpenSans Regular",
+                        fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF4CAF50),
+                        color: Color.fromARGB(255, 89, 203, 93),
                       ),
                     ),
                   ],
@@ -61,6 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Text(
                   "Welcome Back !",
                   style: TextStyle(
+                    fontFamily: "OpenSans Italic",
                     fontWeight: FontWeight.w600,
                     fontSize: titleFontSize,
                     color: const Color(0xFF2639FF),
@@ -148,7 +150,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const DashboardScreen(),
+                                builder: (context) => const ButtonNavigationScreen(),
                               ),
                             );
                           }
