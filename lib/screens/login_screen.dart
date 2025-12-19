@@ -48,7 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const Text(
                       "TripMate",
                       style: TextStyle(
-                        fontFamily: "OpenSans Regular",
+                        fontFamily: "Oswald SemiBold",
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                         color: Color.fromARGB(255, 89, 203, 93),
@@ -75,6 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Text(
                     "Sign In",
                     style: TextStyle(
+                      fontFamily: "Oswald SemiBold",
                       fontSize: isTablet ? 32 : 28,
                       fontWeight: FontWeight.bold,
                     ),
@@ -165,6 +166,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: TextStyle(
                             color: const Color(0xFF7A7A7A),
                             fontSize: isTablet ? 20 : 14,
+                            fontFamily: "OpenSans Italic",
                             fontWeight: FontWeight.w500,
                           ),
                           children: [
