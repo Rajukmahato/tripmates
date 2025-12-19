@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tripmates/screens/splash_screen.dart';
+import 'package:tripmates/theme/theme_data.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -9,13 +10,7 @@ class App extends StatelessWidget {
     return MaterialApp(
       title: 'TripMates',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        scaffoldBackgroundColor: Colors.white,
-        primaryColor: const Color(0xFF2639FF),
-        colorScheme: ColorScheme.fromSwatch().copyWith(
-          secondary: const Color(0xFF4737D6),
-        ),
-      ),
+      theme: getApplicationTheme(),
       home: const SplashScreen(),
     );
   }
