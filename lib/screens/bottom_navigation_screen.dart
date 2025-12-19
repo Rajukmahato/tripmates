@@ -24,12 +24,11 @@ class _ButtonNavigationScreenState extends State<ButtonNavigationScreen> {
     const ProfileScreen(),
   ];
 
-  @override
  @override
 Widget build(BuildContext context) {
   return Scaffold(
     appBar: AppBar(
-      title: const Text("Dashboard"),
+      title: const Text("TripMates"),
       backgroundColor: Colors.deepPurple,
     ),
 
