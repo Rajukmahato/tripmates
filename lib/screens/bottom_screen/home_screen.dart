@@ -17,14 +17,13 @@ class HomeScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
-              
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     "Hi, Raju 👋",
                     style: TextStyle(
+                      fontFamily: "OpenSans Italic",
                       fontSize: isTablet ? 28 : 20,
                       fontWeight: FontWeight.bold,
                     ),
@@ -83,6 +82,7 @@ class HomeScreen extends StatelessWidget {
               Text(
                 "Quick Actions",
                 style: TextStyle(
+                  fontFamily: "Oswald Semibold", 
                   fontSize: isTablet ? 22 : 18,
                   fontWeight: FontWeight.w600,
                 ),
