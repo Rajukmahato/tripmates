@@ -45,6 +45,7 @@ class _SplashScreenState extends State<SplashScreen> {
             Text(
               "Your Traveling Partner",
               style: TextStyle(
+                fontFamily: "OpenSans Italic",
                 color: Colors.white,
                 fontSize: fontSize,
                 fontWeight: FontWeight.w600,

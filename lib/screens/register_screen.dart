@@ -54,6 +54,7 @@ class _SigninScreenState extends State<SigninScreen> {
                     Text(
                       "Create your TripMates account",
                       style: TextStyle(
+                        fontFamily: "OpenSans italic",
                         fontWeight: FontWeight.bold,
                         fontSize: titleFontSize,
                       ),
@@ -159,6 +160,7 @@ class _SigninScreenState extends State<SigninScreen> {
                               style: TextStyle(
                                 color: const Color(0xFF7A7A7A),
                                 fontSize: isTablet ? 20 : 14,
+                                fontFamily: "OpenSans Regular",
                                 fontWeight: FontWeight.w500,
                               ),
                               children: [
@@ -166,6 +168,7 @@ class _SigninScreenState extends State<SigninScreen> {
                                 TextSpan(
                                   text: "Login",
                                   style: const TextStyle(
+                                    fontFamily: "OpenSans Italic",
                                     color: Color(0xFF4636F2),
                                     decoration: TextDecoration.underline,
                                   ),

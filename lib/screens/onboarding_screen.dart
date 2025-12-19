@@ -93,6 +93,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               "Skip",
                               style: TextStyle(
                                 fontSize: buttonFontSize,
+                                fontFamily: "Oswald SemiBold",
                                 color: Colors.grey,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -111,6 +112,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               "Next",
                               style: TextStyle(
                                 fontSize: buttonFontSize,
+                                fontFamily: "Oswald SemiBold",
                                 color: const Color(0xFF4636F2),
                                 fontWeight: FontWeight.w600,
                               ),
