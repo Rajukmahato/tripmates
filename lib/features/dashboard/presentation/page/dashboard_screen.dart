@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:tripmates/screens/bottom_screen/home_screen.dart';
-import 'package:tripmates/screens/bottom_screen/createtrip_screen.dart';
-import 'package:tripmates/screens/bottom_screen/message_screen.dart';
-import 'package:tripmates/screens/bottom_screen/plannedtrip_screen.dart';
-import 'package:tripmates/screens/bottom_screen/profile_screen.dart';
+import 'package:tripmates/features/dashboard/presentation/page/home_screen.dart';
+import 'package:tripmates/features/dashboard/presentation/page/createtrip_screen.dart';
+import 'package:tripmates/features/dashboard/presentation/page/message_screen.dart';
+import 'package:tripmates/features/dashboard/presentation/page/plannedtrip_screen.dart';
+import 'package:tripmates/features/dashboard/presentation/page/profile_screen.dart';
 
 
 class ButtonNavigationScreen extends StatefulWidget {

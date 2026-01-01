@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:tripmates/widgets/onboarding_widget.dart';
-import 'package:tripmates/widgets/my_button.dart';
-import 'register_screen.dart';
+import 'package:tripmates/features/dashboard/presentation/widgets/onboarding_widget.dart';
+import 'package:tripmates/features/dashboard/presentation/widgets/my_button.dart';
+import 'package:tripmates/features/auth/presentation/pages/signup_page.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:tripmates/screens/login_screen.dart';
-import 'package:tripmates/utils/validator_util.dart';
-import 'package:tripmates/widgets/main_text_form_field.dart';
-import 'package:tripmates/widgets/my_button.dart';
+import 'package:tripmates/core/utils/valadition_util.dart';
+import 'package:tripmates/features/dashboard/presentation/widgets/main_text_form_field.dart';
+import 'package:tripmates/features/dashboard/presentation/widgets/my_button.dart';
 import 'package:flutter/gestures.dart';
 
 class SigninScreen extends StatefulWidget {

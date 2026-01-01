@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:tripmates/screens/register_screen.dart';
-import 'package:tripmates/utils/validator_util.dart';
-import 'package:tripmates/widgets/main_text_form_field.dart';
-import 'package:tripmates/widgets/my_button.dart';
+import 'package:tripmates/core/utils/valadition_util.dart';
+import 'package:tripmates/features/dashboard/presentation/widgets/main_text_form_field.dart';
+import 'package:tripmates/features/dashboard/presentation/widgets/my_button.dart';
 import 'package:flutter/gestures.dart';
-import 'package:tripmates/screens/bottom_navigation_screen.dart';
+import 'package:tripmates/features/dashboard/presentation/page/dashboard_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
