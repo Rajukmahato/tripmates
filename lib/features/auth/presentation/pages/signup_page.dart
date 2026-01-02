@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tripmates/screens/login_screen.dart';
+import 'package:tripmates/features/auth/presentation/pages/login_page.dart';
 import 'package:tripmates/core/utils/valadition_util.dart';
 import 'package:tripmates/features/dashboard/presentation/widgets/main_text_form_field.dart';
 import 'package:tripmates/features/dashboard/presentation/widgets/my_button.dart';
@@ -52,7 +52,7 @@ class _SigninScreenState extends State<SigninScreen> {
                     const SizedBox(height: 12),
 
                     Text(
-                      "Create your TripMates account",
+                      "Create your TripMates account with us !",
                       style: TextStyle(
                         fontFamily: "OpenSans italic",
                         fontWeight: FontWeight.bold,
@@ -69,8 +69,8 @@ class _SigninScreenState extends State<SigninScreen> {
                           MainTextFormField(
                             controller: _fullnameController,
                             prefixIcon: Icons.person_2_outlined,
-                            hintText: "Enter your full name",
-                            label: "Full Name",
+                            hintText: "Enter your name",
+                            label: "Name",
                             validator: (value) =>
                                 ValidatorUtil.fullnameValidator(value),
                           ),

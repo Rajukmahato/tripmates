@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:tripmates/screens/register_screen.dart';
+
+import 'package:tripmates/features/auth/presentation/pages/signup_page.dart';
 import 'package:tripmates/core/utils/valadition_util.dart';
 import 'package:tripmates/features/dashboard/presentation/widgets/main_text_form_field.dart';
 import 'package:tripmates/features/dashboard/presentation/widgets/my_button.dart';
