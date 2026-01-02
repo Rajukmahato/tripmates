@@ -1,202 +1,208 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tripmates/app/theme/colors.dart';
+import 'package:tripmates/core/utils/validition_util.dart';
+import 'package:tripmates/core/utils/snackbar_utlis.dart';
 import 'package:tripmates/features/auth/presentation/pages/login_page.dart';
-import 'package:tripmates/core/utils/valadition_util.dart';
+import 'package:tripmates/features/auth/presentation/state/auth_state.dart';
+import 'package:tripmates/features/auth/presentation/view_model/auth_view_model.dart';
 import 'package:tripmates/features/dashboard/presentation/widgets/main_text_form_field.dart';
 import 'package:tripmates/features/dashboard/presentation/widgets/my_button.dart';
-import 'package:flutter/gestures.dart';
 
-class SigninScreen extends StatefulWidget {
-  const SigninScreen({super.key});
+class RegisterScreen extends ConsumerStatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<SigninScreen> createState() => _SigninScreenState();
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _SigninScreenState extends State<SigninScreen> {
+class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _fullnameController = TextEditingController();
+
+  final _fullNameController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _createPasswordController = TextEditingController();
+  final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+
   bool _obscurePassword = true;
 
   @override
+  void dispose() {
+    _fullNameController.dispose();
+    _phoneController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  void _handleRegister() {
+    if (_formKey.currentState!.validate()) {
+      ref.read(authViewModelProvider.notifier).register(
+            fullName: _fullNameController.text.trim(),
+            phoneNumber: _phoneController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    ref.listen<AuthState>(authViewModelProvider, (prev, next) {
+      if (prev?.status == next.status) return;
+
+      if (next.status == AuthStatus.error && next.errorMessage != null) {
+        SnackbarUtil.showError(context, next.errorMessage!);
+      }
+
+      if (next.status == AuthStatus.registered) {
+        SnackbarUtil.showSuccess(context, "Account created successfully!");
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        );
+      }
+    });
+
+    final authState = ref.watch(authViewModelProvider);
+
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final bool isTablet = constraints.maxWidth >= 600;
+      backgroundColor: AppColors.backgroundLight,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            children: [
+              const SizedBox(height: 24),
 
-          final double horizontalPadding = isTablet ? 48 : 16;
-          final double verticalSpacing = isTablet ? 28 : 16;
-          final double imageHeight = isTablet ? 260 : 190;
-          final double imageWidth = isTablet ? 300 : 228;
-          final double titleFontSize = isTablet ? 32 : 20;
+              
+              Image.asset(
+                'assets/images/logo.png',
+                height: 180,
+              ),
 
-          return SafeArea(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+              const SizedBox(height: 16),
+
+              
+              const Text(
+                "Create your TripMates account",
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.darkText,
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              
+              Form(
+                key: _formKey,
                 child: Column(
                   children: [
+                    MainTextFormField(
+                      controller: _fullNameController,
+                      label: "Full Name",
+                      hintText: "Enter your name",
+                      prefixIcon: Icons.person_outline,
+                      validator: ValidatorUtil.fullnameValidator,
+                    ),
 
-                    Center(
-                      child: Image.asset(
-                        'assets/images/logo.png',
-                        height: imageHeight,
-                        width: imageWidth,
+                    const SizedBox(height: 16),
+
+                    MainTextFormField(
+                      controller: _phoneController,
+                      keyboardType: TextInputType.phone,
+                      label: "Mobile Number",
+                      hintText: "Enter phone number",
+                      prefixIcon: Icons.phone_outlined,
+                      validator: ValidatorUtil.phoneNumberValidator,
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    MainTextFormField(
+                      controller: _passwordController,
+                      label: "Password",
+                      hintText: "Create password",
+                      prefixIcon: Icons.lock_outline,
+                      obscureText: _obscurePassword,
+                      validator: ValidatorUtil.passwordValidator,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () =>
+                            setState(() => _obscurePassword = !_obscurePassword),
                       ),
                     ),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
 
-                    Text(
-                      "Create your TripMates account with us !",
-                      style: TextStyle(
-                        fontFamily: "OpenSans italic",
-                        fontWeight: FontWeight.bold,
-                        fontSize: titleFontSize,
+                    MainTextFormField(
+                      controller: _confirmPasswordController,
+                      label: "Confirm Password",
+                      hintText: "Re-enter password",
+                      prefixIcon: Icons.lock_outline,
+                      obscureText: _obscurePassword,
+                      validator: (value) =>
+                          ValidatorUtil.confirmPasswordValidator(
+                        originalPassword: _passwordController.text,
+                        value: value,
                       ),
                     ),
 
-                    SizedBox(height: isTablet ? 50 : 30),
+                    const SizedBox(height: 32),
 
-                    Form(
-                      key: _formKey,
-                      child: Column(
+                  
+                    PrimaryButtonWidget(
+                      text: "Sign Up",
+                      onPressed: _handleRegister,
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    
+                    RichText(
+                      text: TextSpan(
+                        style: const TextStyle(
+                          color: AppColors.greyText,
+                          fontSize: 14,
+                        ),
                         children: [
-                          MainTextFormField(
-                            controller: _fullnameController,
-                            prefixIcon: Icons.person_2_outlined,
-                            hintText: "Enter your name",
-                            label: "Name",
-                            validator: (value) =>
-                                ValidatorUtil.fullnameValidator(value),
-                          ),
-
-                          SizedBox(height: verticalSpacing),
-
-                          MainTextFormField(
-                            keyboardType: TextInputType.phone,
-                            prefixIcon: Icons.phone_iphone_outlined,
-                            controller: _phoneController,
-                            hintText: "Enter your phone number",
-                            label: "Mobile Number",
-                            validator: ValidatorUtil.phoneNumberValidator,
-                          ),
-
-                          SizedBox(height: verticalSpacing),
-
-                          MainTextFormField(
-                            prefixIcon: Icons.lock_outline,
-                            controller: _createPasswordController,
-                            hintText: "Enter a password",
-                            label: "Create Password",
-                            validator: (value) =>
-                                ValidatorUtil.passwordValidator(value),
-                            obscureText: _obscurePassword,
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                                color: Colors.grey,
-                              ),
-                              onPressed: () => setState(
-                                () => _obscurePassword = !_obscurePassword,
-                              ),
+                          const TextSpan(text: "Already have an account? "),
+                          TextSpan(
+                            text: "Login",
+                            style: const TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
                             ),
-                          ),
-
-                          SizedBox(height: verticalSpacing),
-
-                          MainTextFormField(
-                            prefixIcon: Icons.lock_outline,
-                            controller: _confirmPasswordController,
-                            hintText: "Re-type the password",
-                            label: "Confirm Password",
-                            validator: (value) {
-                              return ValidatorUtil.confirmPasswordValidator(
-                                originalPassword:
-                                    _createPasswordController.text,
-                                value: value,
-                              );
-                            },
-                            obscureText: _obscurePassword,
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                                color: Colors.grey,
-                              ),
-                              onPressed: () => setState(
-                                () => _obscurePassword = !_obscurePassword,
-                              ),
-                            ),
-                          ),
-
-                          SizedBox(height: verticalSpacing),
-
-                          PrimaryButtonWidget(
-                            onPressed: () {
-                              if (_formKey.currentState?.validate() == true) {
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () {
+                                ref
+                                    .read(authViewModelProvider.notifier)
+                                    .clearStatus();
                                 Navigator.pushReplacement(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const LoginScreen(),
+                                    builder: (_) => const LoginScreen(),
                                   ),
                                 );
-                              }
-                            },
-                            text: "Sign Up",
+                              },
                           ),
-
-                          SizedBox(height: isTablet ? 36 : 16),
-
-                          RichText(
-                            text: TextSpan(
-                              style: TextStyle(
-                                color: const Color(0xFF7A7A7A),
-                                fontSize: isTablet ? 20 : 14,
-                                fontFamily: "OpenSans Regular",
-                                fontWeight: FontWeight.w500,
-                              ),
-                              children: [
-                                const TextSpan(text: "Already have an account? "),
-                                TextSpan(
-                                  text: "Login",
-                                  style: const TextStyle(
-                                    fontFamily: "OpenSans Italic",
-                                    color: Color(0xFF4636F2),
-                                    decoration: TextDecoration.underline,
-                                  ),
-                                  recognizer: TapGestureRecognizer()
-                                    ..onTap = () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              const LoginScreen(),
-                                        ),
-                                      );
-                                    },
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          SizedBox(height: isTablet ? 60 : 30),
                         ],
                       ),
                     ),
+
+                    const SizedBox(height: 40),
                   ],
                 ),
               ),
-            ),
-          );
-        },
+            ],
+          ),
+        ),
       ),
     );
   }

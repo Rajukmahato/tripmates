@@ -1,206 +1,239 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter/gestures.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tripmates/core/utils/validition_util.dart';
 import 'package:tripmates/features/auth/presentation/pages/signup_page.dart';
-import 'package:tripmates/core/utils/valadition_util.dart';
+import 'package:tripmates/features/dashboard/presentation/page/dashboard_screen.dart';
 import 'package:tripmates/features/dashboard/presentation/widgets/main_text_form_field.dart';
 import 'package:tripmates/features/dashboard/presentation/widgets/my_button.dart';
-import 'package:flutter/gestures.dart';
-import 'package:tripmates/features/dashboard/presentation/page/dashboard_screen.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
+
   bool _obscurePassword = true;
   bool _rememberMe = false;
 
   @override
+  void dispose() {
+    _phoneController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _handleLogin() {
+    if (_formKey.currentState!.validate()) {
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const ButtonNavigationScreen(),
+        ),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final bool isTablet = width >= 600;
+
+    final double horizontalPadding = isTablet ? 48 : 16;
+    final double verticalSpacing = isTablet ? 28 : 16;
+    final double imageHeight = isTablet ? 80 : 55;
+
     return Scaffold(
       backgroundColor: Colors.white,
-      body: LayoutBuilder(builder: (context, constraints) {
-        final bool isTablet = constraints.maxWidth >= 600;
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 16),
 
-        final double horizontalPadding = isTablet ? 48 : 16;
-        final double verticalSpacing = isTablet ? 28 : 16;
-        final double imageHeight = isTablet ? 80 : 55;
-        final double titleFontSize = isTablet ? 32 : 20;
-
-        return SafeArea(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-            child: Column(
-              children: [
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Image.asset(
-                      'assets/images/logo.png',
-                      height: imageHeight,
+              
+              Row(
+                children: [
+                  Image.asset(
+                    'assets/images/logo.png',
+                    height: imageHeight,
+                  ),
+                  const SizedBox(width: 10),
+                  const Text(
+                    "TripMates",
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Color.fromARGB(255, 89, 203, 93),
                     ),
-                    const SizedBox(width: 10),
-                    const Text(
-                      "TripMate",
+                  ),
+                ],
+              ),
+
+              SizedBox(height: verticalSpacing * 2),
+
+              
+              Center(
+                child: Column(
+                  children: const [
+                    Text(
+                      "Welcome Back!",
                       style: TextStyle(
-                        fontFamily: "Oswald SemiBold",
-                        fontSize: 15,
+                        fontSize: 24,
                         fontWeight: FontWeight.w600,
-                        color: Color.fromARGB(255, 89, 203, 93),
+                        color: Color(0xFF2639FF),
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      "Sign In",
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
                 ),
+              ),
 
-                SizedBox(height: verticalSpacing),
+              SizedBox(height: verticalSpacing * 2),
 
-                Text(
-                  "Welcome Back !",
-                  style: TextStyle(
-                    fontFamily: "OpenSans Italic",
-                    fontWeight: FontWeight.w600,
-                    fontSize: titleFontSize,
-                    color: const Color(0xFF2639FF),
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                Center(
-                  child: Text(
-                    "Sign In",
-                    style: TextStyle(
-                      fontFamily: "Oswald SemiBold",
-                      fontSize: isTablet ? 32 : 28,
-                      fontWeight: FontWeight.bold,
+              
+              Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    MainTextFormField(
+                      keyboardType: TextInputType.phone,
+                      prefixIcon: Icons.phone_iphone_outlined,
+                      controller: _phoneController,
+                      hintText: "Enter your mobile number",
+                      label: "Mobile Number",
+                      validator: ValidatorUtil.phoneNumberValidator,
                     ),
-                  ),
-                ),
 
-                SizedBox(height: verticalSpacing * 1.2),
+                    SizedBox(height: verticalSpacing),
 
-                Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      MainTextFormField(
-                        keyboardType: TextInputType.phone,
-                        prefixIcon: Icons.phone_iphone_outlined,
-                        controller: _phoneController,
-                        hintText: "Enter your mobile number",
-                        label: "Mobile number",
-                        validator: ValidatorUtil.phoneNumberValidator,
-                      ),
-
-                      SizedBox(height: verticalSpacing),
-
-                      MainTextFormField(
-                        prefixIcon: Icons.lock_outline,
-                        controller: _passwordController,
-                        hintText: "Enter your password",
-                        label: "Password",
-                        validator: ValidatorUtil.passwordValidator,
-                        obscureText: _obscurePassword,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                            color: Colors.grey,
-                          ),
-                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                    MainTextFormField(
+                      prefixIcon: Icons.lock_outline,
+                      controller: _passwordController,
+                      hintText: "Enter your password",
+                      label: "Password",
+                      validator: ValidatorUtil.passwordValidator,
+                      obscureText: _obscurePassword,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: Colors.grey,
                         ),
-                      ),
-
-                      SizedBox(height: verticalSpacing / 2),
-
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Checkbox(
-                                value: _rememberMe,
-                                onChanged: (v) => setState(() => _rememberMe = v ?? false),
-                              ),
-                              const Text("Remember Me"),
-                            ],
-                          ),
-                          TextButton(
-                            onPressed: () {
-                            },
-                            child: Text(
-                              "Forgot your password ?",
-                              style: TextStyle(
-                                color: const Color(0xFF4737D6),
-                                fontSize: isTablet ? 18 : 14,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      SizedBox(height: isTablet ? 40 : 30),
-
-                      PrimaryButtonWidget(
                         onPressed: () {
-                          if (_formKey.currentState?.validate() == true) {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const ButtonNavigationScreen(),
-                              ),
-                            );
-                          }
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
                         },
-                        text: "Log In",
                       ),
+                    ),
 
-                      SizedBox(height: isTablet ? 26 : 16),
+                    SizedBox(height: verticalSpacing / 1.5),
 
-                      RichText(
-                        text: TextSpan(
-                          style: TextStyle(
-                            color: const Color(0xFF7A7A7A),
-                            fontSize: isTablet ? 20 : 14,
-                            fontFamily: "OpenSans Italic",
-                            fontWeight: FontWeight.w500,
-                          ),
+                    
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
                           children: [
-                            const TextSpan(text: "Don’t have an account? "),
-                            TextSpan(
-                              text: "Sign Up",
-                              style: const TextStyle(
-                                color: Color(0xFF4636F2),
-                                decoration: TextDecoration.underline,
+                            Checkbox(
+                              value: _rememberMe,
+                              onChanged: (value) {
+                                setState(() {
+                                  _rememberMe = value ?? false;
+                                });
+                              },
+                            ),
+                            const Text(
+                              "Remember Me",
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
                               ),
-                              recognizer: TapGestureRecognizer()
-                                ..onTap = () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const SigninScreen(),
-                                    ),
-                                  );
-                                },
                             ),
                           ],
                         ),
-                      ),
+                        TextButton(
+                          onPressed: () {
+                            // TODO: Forgot password
+                          },
+                          child: const Text(
+                            "Forgot Password?",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF4737D6),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
 
-                      SizedBox(height: isTablet ? 60 : 30),
-                    ],
-                  ),
+                    SizedBox(height: isTablet ? 40 : 30),
+
+                    
+                    PrimaryButtonWidget(
+                      onPressed: _handleLogin,
+                      text: "Log In",
+                    ),
+
+                    SizedBox(height: isTablet ? 26 : 16),
+
+                    
+                    RichText(
+                      text: TextSpan(
+                        style: const TextStyle(
+                          color: Color(0xFF7A7A7A),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        children: [
+                          const TextSpan(text: "Don’t have an account? "),
+                          TextSpan(
+                            text: "Sign Up",
+                            style: const TextStyle(
+                              color: Color(0xFF4636F2),
+                              decoration: TextDecoration.underline,
+                            ),
+                            recognizer: TapGestureRecognizer()
+                              ..onTap = () {
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const RegisterScreen(),
+                                  ),
+                                );
+                              },
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    SizedBox(height: isTablet ? 60 : 30),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        );
-      }),
+        ),
+      ),
     );
   }
 }
+

@@ -5,7 +5,7 @@ import 'package:tripmates/features/auth/domain/entities/auth_entity.dart';
 
 abstract interface class IAuthRepository {
 
-  Future<Either<Failure, bool>> registerUser(
+  Future<Either<Failure, bool>> register(
     AuthEntity user,
   );
 

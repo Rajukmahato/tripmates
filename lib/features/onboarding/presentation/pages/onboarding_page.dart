@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:tripmates/features/auth/presentation/pages/login_page.dart';
 import 'package:tripmates/features/dashboard/presentation/widgets/onboarding_widget.dart';
 import 'package:tripmates/features/dashboard/presentation/widgets/my_button.dart';
-import 'package:tripmates/features/auth/presentation/pages/signup_page.dart';
+
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -73,7 +74,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const SigninScreen(),
+                              builder: (context) => const Loginpage(),
                             ),
                           );
                         },
