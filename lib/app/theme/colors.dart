@@ -16,5 +16,5 @@ class AppColors {
 
   static const Color borderGrey = Color(0xFFE5E7EB);
   static const Color success = Color.fromARGB(255, 66, 24, 216);
-  static const Color danger = Color(0xFFEF4444);
+  static const Color danger = Color.fromARGB(255, 231, 50, 50);
 }
