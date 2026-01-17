@@ -6,27 +6,23 @@ import 'package:tripmates/core/usecases/app_usecase.dart';
 import 'package:tripmates/features/auth/data/repositories/auth_repository.dart';
 import 'package:tripmates/features/auth/domain/entities/auth_entity.dart';
 import 'package:tripmates/features/auth/domain/repositories/auth_repository.dart';
-
 class RegisterUsecaseParams extends Equatable {
   final String fullName;
-  final String? authId;
   final String phoneNumber;
-  final String? password;
+  final String password;
   final String? confirmPassword;
 
   const RegisterUsecaseParams({
-    this.authId,
     required this.fullName,
-    this.password,
-    this.confirmPassword,
+    required this.password,
+    required this.confirmPassword,
     required this.phoneNumber,
   });
 
   @override
-  List<Object?> get props => [authId, fullName, phoneNumber, password, confirmPassword];
+  List<Object?> get props => [fullName, phoneNumber, password, confirmPassword];
 }
 
-//provider for register usecase
 final registerUsecaseProvider = Provider<RegisterUsecase>((ref) {
   final authRepository = ref.read(authRepositoryProvider);
   return RegisterUsecase(authRepository: authRepository);
@@ -45,7 +41,6 @@ class RegisterUsecase
       phoneNumber: params.phoneNumber,
       password: params.password,
       confirmPassword: params.confirmPassword,
-      authId: params.authId,
     );
     return _authRepository.register(entity);
   }

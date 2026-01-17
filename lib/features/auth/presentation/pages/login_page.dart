@@ -3,9 +3,12 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tripmates/core/utils/validition_util.dart';
 import 'package:tripmates/features/auth/presentation/pages/signup_page.dart';
-import 'package:tripmates/features/dashboard/presentation/page/dashboard_screen.dart';
+import 'package:tripmates/features/dashboard/presentation/page/home_screen.dart';
 import 'package:tripmates/features/dashboard/presentation/widgets/main_text_form_field.dart';
 import 'package:tripmates/features/dashboard/presentation/widgets/my_button.dart';
+import 'package:tripmates/features/auth/presentation/view_model/auth_view_model.dart';
+import 'package:tripmates/core/utils/snackbar_utlis.dart';
+import 'package:tripmates/features/auth/presentation/state/auth_state.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -29,15 +32,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  void _handleLogin() {
+    Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const ButtonNavigationScreen(),
-        ),
-      );
+      await ref
+          .read(authViewModelProvider.notifier)
+          .login(
+            phoneNumber: _phoneController.text,
+            password: _passwordController.text,
+          );
     }
   }
 
@@ -49,6 +51,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final double horizontalPadding = isTablet ? 48 : 16;
     final double verticalSpacing = isTablet ? 28 : 16;
     final double imageHeight = isTablet ? 80 : 55;
+
+    ref.listen<AuthState>(authViewModelProvider, (prev, next) {
+    if (prev?.status == next.status) return;
+
+    if (next.status == AuthStatus.error && next.errorMessage != null) {
+      SnackbarUtil.showError(context, next.errorMessage!);
+    }
+
+    if (next.status == AuthStatus.authenticated) {
+      SnackbarUtil.showSuccess(context, "Login successful!");
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
+      );
+    }
+  });
+
 
     return Scaffold(
       backgroundColor: Colors.white,
