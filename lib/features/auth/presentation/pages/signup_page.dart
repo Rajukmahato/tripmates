@@ -37,14 +37,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   void _handleRegister() {
-    if (_formKey.currentState!.validate()) {
-      ref.read(authViewModelProvider.notifier).register(
-            fullName: _fullNameController.text.trim(),
-            phoneNumber: _phoneController.text.trim(),
-            password: _passwordController.text.trim(),
-          );
-    }
+  if (_formKey.currentState!.validate()) {
+    ref.read(authViewModelProvider.notifier).register(
+      fullName: _fullNameController.text.trim(),
+      phoneNumber: _phoneController.text.trim(),
+      password: _passwordController.text.trim(),
+      confirmPassword: _confirmPasswordController.text.trim(),
+    );
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -207,3 +208,4 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     );
   }
 }
+
