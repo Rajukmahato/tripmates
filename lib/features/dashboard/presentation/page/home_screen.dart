@@ -1,4 +1,6 @@
+
 import 'package:flutter/material.dart';
+
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -7,9 +9,10 @@ class HomeScreen extends StatelessWidget {
     final width = MediaQuery.of(context).size.width;
     final isTablet = width >= 600;
 
-    return SafeArea(
-      child: SingleChildScrollView(
-        child: Padding(
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(
             horizontal: isTablet ? 32 : 16,
             vertical: 12,
@@ -20,12 +23,16 @@ class HomeScreen extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    "Hi, Raju 👋",
-                    style: TextStyle(
-                      fontFamily: "OpenSans Italic",
-                      fontSize: isTablet ? 28 : 20,
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Text(
+                      "Hi, Raju 👋",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: "OpenSans Italic",
+                        fontSize: isTablet ? 28 : 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   const Icon(Icons.notifications_none, size: 26),
@@ -33,8 +40,6 @@ class HomeScreen extends StatelessWidget {
               ),
 
               const SizedBox(height: 20),
-
-              
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
@@ -47,29 +52,38 @@ class HomeScreen extends StatelessWidget {
                   children: [
                     const Text(
                       "Upcoming Trip",
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
+                      style: TextStyle(color: Colors.white70),
                     ),
                     const SizedBox(height: 6),
+
                     const Text(
                       "Pokhara Adventure",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+
                     const SizedBox(height: 8),
+
                     Row(
                       children: const [
-                        Icon(Icons.calendar_today,
-                            color: Colors.white70, size: 16),
+                        Icon(
+                          Icons.calendar_today,
+                          color: Colors.white70,
+                          size: 16,
+                        ),
                         SizedBox(width: 6),
-                        Text(
-                          "20 Aug - 25 Aug",
-                          style: TextStyle(color: Colors.white70),
+                        Expanded(
+                          child: Text(
+                            "20 Aug - 25 Aug",
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: Colors.white70),
+                          ),
                         ),
                       ],
                     ),
@@ -78,20 +92,18 @@ class HomeScreen extends StatelessWidget {
               ),
 
               const SizedBox(height: 28),
-
               Text(
                 "Quick Actions",
                 style: TextStyle(
-                  fontFamily: "Oswald Semibold", 
                   fontSize: isTablet ? 22 : 18,
                   fontWeight: FontWeight.w600,
                 ),
               ),
 
               const SizedBox(height: 14),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                spacing: 16,
+                runSpacing: 16,
                 children: [
                   _actionButton(Icons.add, "Create\nTrip"),
                   _actionButton(Icons.map, "Explore"),
@@ -101,7 +113,6 @@ class HomeScreen extends StatelessWidget {
               ),
 
               const SizedBox(height: 30),
-
               Text(
                 "Recent Trips",
                 style: TextStyle(
@@ -122,27 +133,31 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
-  Widget _actionButton(IconData icon, String label) {
-    return Column(
-      children: [
-        Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.deepPurple.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(14),
+  static Widget _actionButton(IconData icon, String label) {
+    return SizedBox(
+      width: 80,
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.deepPurple.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(icon, color: Colors.deepPurple),
           ),
-          child: Icon(icon, color: Colors.deepPurple),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 12),
-        ),
-      ],
+          const SizedBox(height: 6),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 12),
+          ),
+        ],
+      ),
     );
   }
-  Widget _tripTile(String title, String status) {
+
+  static Widget _tripTile(String title, String status) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
@@ -151,9 +166,15 @@ class HomeScreen extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade300),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: const TextStyle(fontSize: 16)),
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 16),
+            ),
+          ),
           Text(
             status,
             style: const TextStyle(
@@ -166,4 +187,3 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
-
