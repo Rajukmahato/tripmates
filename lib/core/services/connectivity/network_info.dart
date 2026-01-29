@@ -18,20 +18,22 @@ class NetworkInfo implements INetworkInfo {
 
   @override
   Future<bool> get isConnected async {
-    final result = await _connectivity
-        .checkConnectivity(); //check wifi or mobile data is on or not
-    if (result.contains(ConnectivityResult.none)) {
-      return false;
+    // First try actual internet connection (more reliable for simulators)
+    final hasInternet = await _hasActualInternetConnection();
+    if (hasInternet) {
+      return true;
     }
-    return await _isInternetIsThereFR();
-    // return false;
+
+    // Fallback to connectivity check
+    final result = await _connectivity.checkConnectivity();
+    return !result.contains(ConnectivityResult.none);
   }
 
-  Future<bool> _isInternetIsThereFR() async {
+  Future<bool> _hasActualInternetConnection() async {
     try {
       final result = await InternetAddress.lookup('google.com');
       return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-    } catch (e) {
+    } on SocketException catch (_) {
       return false;
     }
   }

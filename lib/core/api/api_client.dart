@@ -137,27 +137,34 @@ class ApiClient {
   }
 }
 
+// Auth Interceptor to add JWT token to requests
 class _AuthInterceptor extends Interceptor {
   final _storage = const FlutterSecureStorage();
-  static const _tokenKey = 'auth_token';
-
-  static const List<String> _publicEndpoints = [
-    ApiEndpoints.authLogin,
-    ApiEndpoints.authRegister,
-  ];
-
-  bool _isPublicEndpoint(String path) {
-    return _publicEndpoints.any((e) => path.startsWith(e));
-  }
+  static const String _tokenKey = 'auth_token';
 
   @override
-  Future<void> onRequest(
+  void onRequest(
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    if (!_isPublicEndpoint(options.path)) {
+    // Skip auth for public endpoints
+    final publicEndpoints = [
+      ApiEndpoints.batches,
+      ApiEndpoints.categories,
+      ApiEndpoints.studentLogin,
+    ];
+
+    final isPublicGet =
+        options.method == 'GET' &&
+        publicEndpoints.any((endpoint) => options.path.startsWith(endpoint));
+
+    final isAuthEndpoint =
+        options.path == ApiEndpoints.studentLogin ||
+        options.path == ApiEndpoints.students;
+
+    if (!isPublicGet && !isAuthEndpoint) {
       final token = await _storage.read(key: _tokenKey);
-      if (token != null && token.isNotEmpty) {
+      if (token != null) {
         options.headers['Authorization'] = 'Bearer $token';
       }
     }
@@ -167,8 +174,11 @@ class _AuthInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
+    // Handle 401 Unauthorized - token expired
     if (err.response?.statusCode == 401) {
+      // Clear token and redirect to login
       _storage.delete(key: _tokenKey);
+      // You can add navigation logic here or use a callback
     }
     handler.next(err);
   }

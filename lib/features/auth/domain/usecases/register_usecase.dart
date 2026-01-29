@@ -2,51 +2,62 @@ import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tripmates/core/error/failures.dart';
-import 'package:tripmates/core/usecases/app_usecase.dart';
+import 'package:tripmates/core/usecases/app_usecases.dart';
 import 'package:tripmates/features/auth/data/repositories/auth_repository.dart';
 import 'package:tripmates/features/auth/domain/entities/auth_entity.dart';
 import 'package:tripmates/features/auth/domain/repositories/auth_repository.dart';
 
-class RegisterUsecaseParams extends Equatable {
+class RegisterParams extends Equatable {
   final String fullName;
-  final String? authId;
-  final String phoneNumber;
-  final String? password;
-  final String? confirmPassword;
+  final String email;
+  final String username;
+  final String password;
+  final String? phoneNumber;
+  final String? batchId;
 
-  const RegisterUsecaseParams({
-    this.authId,
+  const RegisterParams({
     required this.fullName,
-    this.password,
-    this.confirmPassword,
-    required this.phoneNumber,
+    required this.email,
+    required this.username,
+    required this.password,
+    this.phoneNumber,
+    this.batchId,
   });
 
   @override
-  List<Object?> get props => [authId, fullName, phoneNumber, password, confirmPassword];
+  List<Object?> get props => [
+    fullName,
+    email,
+    username,
+    password,
+    phoneNumber,
+    batchId,
+  ];
 }
 
-//provider for register usecase
+// Create Provider
 final registerUsecaseProvider = Provider<RegisterUsecase>((ref) {
   final authRepository = ref.read(authRepositoryProvider);
   return RegisterUsecase(authRepository: authRepository);
 });
 
-class RegisterUsecase
-    implements UsecaseWithParams<bool, RegisterUsecaseParams> {
+class RegisterUsecase implements UsecaseWithParms<bool, RegisterParams> {
   final IAuthRepository _authRepository;
+
   RegisterUsecase({required IAuthRepository authRepository})
     : _authRepository = authRepository;
 
   @override
-  Future<Either<Failure, bool>> call(RegisterUsecaseParams params) {
-    final entity = AuthEntity(
+  Future<Either<Failure, bool>> call(RegisterParams params) {
+    final authEntity = AuthEntity(
       fullName: params.fullName,
-      phoneNumber: params.phoneNumber,
+      email: params.email,
+      username: params.username,
       password: params.password,
-      confirmPassword: params.confirmPassword,
-      authId: params.authId,
+      phoneNumber: params.phoneNumber,
+      batchId: params.batchId,
     );
-    return _authRepository.register(entity);
+
+    return _authRepository.register(authEntity);
   }
 }

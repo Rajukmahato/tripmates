@@ -5,14 +5,11 @@ class StorageService {
 
   StorageService({required SharedPreferences prefs}) : _prefs = prefs;
 
-  //String
-  Future<bool> setString(String key, String value) {
-    return _prefs.setString(key, value);
-  }
+  // String
+  Future<bool> setString(String key, String value) =>
+      _prefs.setString(key, value);
 
-  String? getString(String key) {
-    return _prefs.getString(key);
-  }
+  String? getString(String key) => _prefs.getString(key);
 
   // Int
   Future<bool> setInt(String key, int value) => _prefs.setInt(key, value);
