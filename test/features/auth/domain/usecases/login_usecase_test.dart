@@ -12,9 +12,6 @@ import 'package:tripmates/features/auth/domain/usecases/register_usecase.dart';
 import 'package:tripmates/features/auth/presentation/state/auth_state.dart';
 import 'package:tripmates/features/auth/presentation/view_model/auth_viewmodel.dart';
 
-/// =======================
-/// Mock Classes
-/// =======================
 
 class MockRegisterUsecase extends Mock implements RegisterUsecase {}
 class MockLoginUsecase extends Mock implements LoginUsecase {}

@@ -1,11 +1,5 @@
-// GENERATED CODE - DO NOT MODIFY BY HAND
 
 part of 'category_hive_model.dart';
-
-// **************************************************************************
-// TypeAdapterGenerator
-// **************************************************************************
-
 class CategoryHiveModelAdapter extends TypeAdapter<CategoryHiveModel> {
   @override
   final int typeId = 3;
