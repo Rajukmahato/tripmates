@@ -104,6 +104,6 @@ class AuthViewModel extends Notifier<AuthState> {
   }
 
   void clearError() {
-    state = state.copyWith(errorMessage: null);
+    state = state.copyWith(clearError: true);
   }
 }
