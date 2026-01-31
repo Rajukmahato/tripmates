@@ -1,5 +1,6 @@
+
+import '../../../onboarding/presentation/pages/onboarding_page.dart';
 import 'package:flutter/material.dart';
-import 'package:tripmates/features/onboarding/presentation/pages/onboarding_page.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

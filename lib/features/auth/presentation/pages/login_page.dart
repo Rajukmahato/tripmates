@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tripmates/core/utils/validition_util.dart';
 import 'package:tripmates/features/auth/presentation/pages/signup_page.dart';
-import 'package:tripmates/features/dashboard/presentation/page/home_screen.dart';
 import 'package:tripmates/features/dashboard/presentation/widgets/main_text_form_field.dart';
+import 'package:tripmates/core/utils/validation_util.dart';
 import 'package:tripmates/features/dashboard/presentation/widgets/my_button.dart';
-import 'package:tripmates/features/auth/presentation/view_model/auth_view_model.dart';
-import 'package:tripmates/core/utils/snackbar_utlis.dart';
 import 'package:tripmates/features/auth/presentation/state/auth_state.dart';
+
+import '../../../../core/utils/snackbar_utils.dart';
+import '../../../dashboard/presentation/pages/dashboard_page.dart';
+
+import '../view_model/auth_viewmodel.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -19,7 +21,7 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
@@ -27,18 +29,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   void dispose() {
-    _phoneController.dispose();
+    _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-    Future<void> _handleLogin() async {
+  Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
       await ref
           .read(authViewModelProvider.notifier)
           .login(
-            phoneNumber: _phoneController.text,
-            password: _passwordController.text,
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
           );
     }
   }
@@ -53,21 +55,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final double imageHeight = isTablet ? 80 : 55;
 
     ref.listen<AuthState>(authViewModelProvider, (prev, next) {
-    if (prev?.status == next.status) return;
+      if (prev?.status == next.status) return;
 
-    if (next.status == AuthStatus.error && next.errorMessage != null) {
-      SnackbarUtil.showError(context, next.errorMessage!);
-    }
+      if (next.status == AuthStatus.error && next.errorMessage != null) {
+        SnackbarUtil.showError(context, next.errorMessage!);
+      }
 
-    if (next.status == AuthStatus.authenticated) {
-      SnackbarUtil.showSuccess(context, "Login successful!");
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
-    }
-  });
-
+      if (next.status == AuthStatus.authenticated) {
+        SnackbarUtil.showSuccess(context, "Login successful!");
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const DashboardPage()),
+        );
+      }
+    });
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -79,13 +80,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             children: [
               const SizedBox(height: 16),
 
-              
               Row(
                 children: [
-                  Image.asset(
-                    'assets/images/logo.png',
-                    height: imageHeight,
-                  ),
+                  Image.asset('assets/images/logo.png', height: imageHeight),
                   const SizedBox(width: 10),
                   const Text(
                     "TripMates",
@@ -100,7 +97,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
               SizedBox(height: verticalSpacing * 2),
 
-              
               Center(
                 child: Column(
                   children: const [
@@ -126,18 +122,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
               SizedBox(height: verticalSpacing * 2),
 
-              
               Form(
                 key: _formKey,
                 child: Column(
                   children: [
                     MainTextFormField(
-                      keyboardType: TextInputType.phone,
-                      prefixIcon: Icons.phone_iphone_outlined,
-                      controller: _phoneController,
-                      hintText: "Enter your mobile number",
-                      label: "Mobile Number",
-                      validator: ValidatorUtil.phoneNumberValidator,
+                      keyboardType: TextInputType.emailAddress,
+                      prefixIcon: Icons.email_outlined,
+                      controller: _emailController,
+                      hintText: "Enter your email",
+                      label: "Email",
+                      validator: ValidatorUtil.emailValidator,
                     ),
 
                     SizedBox(height: verticalSpacing),
@@ -166,7 +161,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                     SizedBox(height: verticalSpacing / 1.5),
 
-                    
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -206,7 +200,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                     SizedBox(height: isTablet ? 40 : 30),
 
-                    
                     PrimaryButtonWidget(
                       onPressed: _handleLogin,
                       text: "Log In",
@@ -214,8 +207,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                     SizedBox(height: isTablet ? 26 : 16),
 
-                    
                     RichText(
+                      textAlign: TextAlign.center,
                       text: TextSpan(
                         style: const TextStyle(
                           color: Color(0xFF7A7A7A),
@@ -255,4 +248,3 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 }
-

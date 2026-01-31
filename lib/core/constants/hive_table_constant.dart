@@ -1,17 +1,25 @@
 class HiveTableConstant {
+  // Private constructor
   HiveTableConstant._();
 
+  // Database name
   static const String dbName = "tripmates_db";
 
+  // Tables -> Box : Index & Names
   static const int authTypeId = 0;
-  static const String authTable = "auth_table";
+  static const String authBoxName = 'auth_box';
 
-  static const int userTypeId = 1;
-  static const String userTable = "user_table";
+  static const int tripTypeId = 1;
+  static const String tripBoxName = 'trip_box';
 
-  static const int tripTypeId = 2;
-  static const String tripTable = "trip_table";
+  static const int destinationTypeId = 2;
+  static const String destinationBoxName = 'destination_box';
 
-  static const int messageTypeId = 3;
-  static const String messageTable = "message_table";
+  static const int categoryTypeId = 3;
+  static const String categoryBoxName = 'category_box';
+
+  static const int profileTypeId = 4;
+  static const String profileBoxName = 'profile_box';
+
+  static const String userBoxName = 'user_box';
 }

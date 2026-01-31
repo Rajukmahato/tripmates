@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:tripmates/features/auth/presentation/pages/login_page.dart';
-import 'package:tripmates/features/dashboard/presentation/widgets/onboarding_widget.dart';
+import '../../../../app/routes/app_routes.dart';
+import '../../../auth/presentation/pages/login_page.dart';
 import 'package:tripmates/features/dashboard/presentation/widgets/my_button.dart';
-
+import 'package:tripmates/features/dashboard/presentation/widgets/onboarding_widget.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -23,7 +23,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final bottomSpacing = w * 0.04;
     final bottomPadding = EdgeInsets.symmetric(horizontal: w * 0.05);
     final buttonFontSize = w * 0.04;
-    
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -71,11 +70,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ? PrimaryButtonWidget(
                         text: "Get Started",
                         onPressed: () {
-                          Navigator.pushReplacement(
+                          AppRoutes.pushReplacement(
                             context,
-                            MaterialPageRoute(
-                              builder: (context) => const LoginScreen(),
-                            ),
+                            const LoginScreen(),
                           );
                         },
                       )
@@ -100,7 +97,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               ),
                             ),
                           ),
-                          
 
                           GestureDetector(
                             onTap: () {

@@ -14,36 +14,63 @@ class AuthHiveModel extends HiveObject {
   final String fullName;
 
   @HiveField(2)
-  final String phoneNumber;
+  final String email;
 
   @HiveField(3)
+  final String? phoneNumber;
+
+  @HiveField(4)
+  final String username;
+
+  @HiveField(5)
   final String? password;
+
+  @HiveField(6)
+  final String? batchId;
+
+  @HiveField(7)
+  final String? profilePicture;
 
   AuthHiveModel({
     String? authId,
     required this.fullName,
-    required this.phoneNumber,
+    required this.email,
+    this.phoneNumber,
+    required this.username,
     this.password,
-  }) : authId = authId ?? Uuid().v4();
+    this.batchId,
+    this.profilePicture,
+  }) : authId = authId ?? const Uuid().v4();
 
+  // To Entity
   AuthEntity toEntity() {
     return AuthEntity(
       authId: authId,
       fullName: fullName,
+      email: email,
       phoneNumber: phoneNumber,
+      username: username,
       password: password,
+      batchId: batchId,
+      profilePicture: profilePicture,
     );
   }
 
+  // From Entity
   factory AuthHiveModel.fromEntity(AuthEntity entity) {
     return AuthHiveModel(
       authId: entity.authId,
       fullName: entity.fullName,
+      email: entity.email,
       phoneNumber: entity.phoneNumber,
+      username: entity.username,
       password: entity.password,
+      batchId: entity.batchId,
+      profilePicture: entity.profilePicture,
     );
   }
 
+  // To Entity List
   static List<AuthEntity> toEntityList(List<AuthHiveModel> models) {
     return models.map((model) => model.toEntity()).toList();
   }
