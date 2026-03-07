@@ -1,11 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tripmates/core/providers/app_providers.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/theme_extensions.dart';
 import '../../../../app/routes/app_routes.dart';
-import '../../../../core/services/storage/user_session_service.dart';
 import '../../domain/entities/profile_entity.dart';
 import '../view_model/profile_viewmodel.dart';
 import '../state/profile_state.dart';
