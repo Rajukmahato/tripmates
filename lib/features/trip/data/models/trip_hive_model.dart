@@ -203,7 +203,7 @@ class TripHiveModel extends HiveObject {
 
   factory TripHiveModel.fromEntity(TripEntity entity) {
     return TripHiveModel(
-      tripId: entity.tripId,
+      tripId: entity.tripId ?? const Uuid().v4(),
       createdBy: entity.createdBy,
       tripName: entity.tripName,
       description: entity.description,

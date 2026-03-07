@@ -7,6 +7,7 @@ import 'package:tripmates/features/trip/data/models/trip_hive_model.dart';
 import 'package:tripmates/features/destination/data/models/destination_hive_model.dart';
 import 'package:tripmates/features/profile/data/models/profile_hive_model.dart';
 import 'package:tripmates/features/location/data/models/location_hive_model.dart';
+import 'package:tripmates/features/notifications/data/models/notification_hive_model.dart';
 import 'package:path_provider/path_provider.dart';
 
 class HiveService {
@@ -114,6 +115,9 @@ class HiveService {
     if (!Hive.isAdapterRegistered(HiveTableConstant.locationTypeId)) {
       Hive.registerAdapter(LocationHiveModelAdapter());
     }
+    if (!Hive.isAdapterRegistered(HiveTableConstant.notificationTypeId)) {
+      Hive.registerAdapter(NotificationHiveModelAdapter());
+    }
   }
 
   // box open
@@ -130,7 +134,12 @@ class HiveService {
       HiveTableConstant.conversationBoxName,
     );
     await Hive.openBox<LocationHiveModel>(HiveTableConstant.locationBoxName);
+    await Hive.openBox<NotificationHiveModel>(
+      HiveTableConstant.notificationBoxName,
+    );
     await Hive.openBox(HiveTableConstant.userBoxName);
+    // Box for offline operations queue
+    await Hive.openBox('offline_operations_queue');
   }
 
   // ======================= Auth Queries =========================

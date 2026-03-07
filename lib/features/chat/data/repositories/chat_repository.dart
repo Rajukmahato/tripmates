@@ -4,6 +4,7 @@ import 'package:tripmates/core/error/failures.dart';
 import 'package:tripmates/core/services/connectivity/network_info.dart'
     as network_info;
 import 'package:tripmates/core/providers/app_providers.dart';
+import 'package:tripmates/core/services/offline/offline_operations_queue.dart';
 import 'package:tripmates/features/chat/data/datasources/chat_local_datasource.dart';
 import 'package:tripmates/features/chat/data/datasources/chat_remote_datasource.dart';
 import 'package:tripmates/features/chat/data/models/chat_api_model.dart';
@@ -16,10 +17,12 @@ final chatRepositoryProvider = Provider<IChatRepository>((ref) {
   final chatLocalDatasource = ref.read(chatLocalDatasourceProvider);
   final chatRemoteDatasource = ref.read(chatRemoteDatasourceProvider);
   final networkInfo = ref.read(networkInfoProvider);
+  final operationsQueue = ref.read(offlineOperationsQueueProvider);
   return ChatRepository(
     chatLocalDatasource: chatLocalDatasource,
     chatRemoteDatasource: chatRemoteDatasource,
     networkInfo: networkInfo,
+    operationsQueue: operationsQueue,
   );
 });
 
@@ -27,14 +30,17 @@ class ChatRepository implements IChatRepository {
   final IChatLocalDataSource _chatLocalDataSource;
   final IChatRemoteDataSource _chatRemoteDataSource;
   final network_info.NetworkInfo _networkInfo;
+  final OfflineOperationsQueue _operationsQueue;
 
   ChatRepository({
     required IChatLocalDataSource chatLocalDatasource,
     required IChatRemoteDataSource chatRemoteDatasource,
     required network_info.NetworkInfo networkInfo,
+    required OfflineOperationsQueue operationsQueue,
   }) : _chatLocalDataSource = chatLocalDatasource,
        _chatRemoteDataSource = chatRemoteDatasource,
-       _networkInfo = networkInfo;
+       _networkInfo = networkInfo,
+       _operationsQueue = operationsQueue;
 
   @override
   Future<Either<Failure, List<ConversationEntity>>> getConversations(
@@ -264,7 +270,54 @@ class ChatRepository implements IChatRepository {
     String? replyToMessageId,
   }) async {
     if (!await _networkInfo.isConnected) {
-      return const Left(NetworkFailure(message: 'No internet connection'));
+      try {
+        final localMessage = MessageEntity(
+          messageId: 'temp_${DateTime.now().millisecondsSinceEpoch}',
+          conversationId: conversationId,
+          senderId: senderId,
+          senderName: senderName,
+          content: content,
+          createdAt: DateTime.now(),
+          isRead: false,
+          imageUrls: imageUrls,
+          replyToMessageId: replyToMessageId,
+        );
+
+        await _chatLocalDataSource.saveMessage(
+          ChatHiveModel(
+            messageId: localMessage.messageId,
+            conversationId: conversationId,
+            senderId: senderId,
+            senderName: senderName,
+            senderProfilePicture: null,
+            content: content,
+            createdAt: localMessage.createdAt,
+            editedAt: null,
+            isRead: false,
+            imageUrls: imageUrls,
+            replyToMessageId: replyToMessageId,
+          ),
+        );
+
+        await _operationsQueue.queueOperation(
+          id: 'chat_send_${DateTime.now().millisecondsSinceEpoch}',
+          feature: 'chat',
+          type: OperationType.create,
+          data: {
+            'action': 'send_message',
+            'conversationId': conversationId,
+            'senderId': senderId,
+            'senderName': senderName,
+            'content': content,
+            'imageUrls': imageUrls,
+            'replyToMessageId': replyToMessageId,
+          },
+        );
+
+        return Right(localMessage);
+      } catch (e) {
+        return Left(ApiFailure(message: 'Failed to queue offline message: $e'));
+      }
     }
 
     try {
