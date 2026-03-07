@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tripmates/core/services/storage/user_session_service.dart';
+import 'package:tripmates/core/providers/shared_prefs_provider.dart';
 
 // Theme mode provider
 final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(

@@ -21,5 +21,17 @@ class HiveTableConstant {
   static const int profileTypeId = 4;
   static const String profileBoxName = 'profile_box';
 
+  static const int notificationTypeId = 5;
+  static const String notificationBoxName = 'notification_box';
+
+  static const int chatTypeId = 6;
+  static const String chatBoxName = 'chat_box';
+
+  static const int conversationTypeId = 7;
+  static const String conversationBoxName = 'conversation_box';
+
+  static const int locationTypeId = 8;
+  static const String locationBoxName = 'location_box';
+
   static const String userBoxName = 'user_box';
 }

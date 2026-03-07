@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tripmates/core/error/exceptions.dart';
+import 'package:tripmates/core/providers/app_providers.dart';
 import 'package:tripmates/core/services/hive/hive_service.dart';
 import 'package:tripmates/features/category/data/datasources/category_datasource.dart';
 import 'package:tripmates/features/category/data/models/category_hive_model.dart';
@@ -39,9 +41,13 @@ class CategoryLocalDatasource implements ICategoryDataSource {
   @override
   Future<List<CategoryHiveModel>> getAllCategories() async {
     try {
-      return _hiveService.getAllCategories();
+      final categories = _hiveService.getAllCategories();
+      return categories;
     } catch (e) {
-      return [];
+      throw ServerException(
+        message:
+            'Failed to load categories from local storage: ${e.toString()}',
+      );
     }
   }
 

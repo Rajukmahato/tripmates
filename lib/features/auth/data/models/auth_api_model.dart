@@ -1,5 +1,13 @@
 import 'package:tripmates/features/auth/domain/entities/auth_entity.dart';
 
+int? _parseIntValue(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is String) return int.tryParse(value);
+  if (value is double) return value.toInt();
+  return null;
+}
+
 class AuthApiModel {
   final String? id;
   final String fullName;
@@ -10,6 +18,13 @@ class AuthApiModel {
   final String? confirmPassword;
   final String? batchId;
   final String? profilePicture;
+  final String? bio;
+  final String? location;
+  final String? role;
+  final String? status;
+  final int? totalTrips;
+  final int? completedTrips;
+
   AuthApiModel({
     this.id,
     required this.fullName,
@@ -20,6 +35,12 @@ class AuthApiModel {
     this.confirmPassword,
     this.batchId,
     this.profilePicture,
+    this.bio,
+    this.location,
+    this.role,
+    this.status,
+    this.totalTrips,
+    this.completedTrips,
   });
 
   // toJSON
@@ -33,19 +54,31 @@ class AuthApiModel {
       "confirmPassword": confirmPassword ?? password,
       "batchId": batchId,
       "profilePicture": profilePicture,
+      "bio": bio,
+      "location": location,
+      "role": role,
+      "status": status,
+      "totalTrips": totalTrips,
+      "completedTrips": completedTrips,
     };
   }
 
   // fromJson
   factory AuthApiModel.fromJson(Map<String, dynamic> json) {
     return AuthApiModel(
-      id: json['_id'] as String?,
+      id: json['userId'] as String? ?? json['_id'] as String?,
       fullName: json['fullName'] as String? ?? '',
       email: json['email'] as String? ?? '',
       phoneNumber: json['phoneNumber'] as String?,
       username: json['username'] as String? ?? '',
       batchId: json['batchId'] as String?,
       profilePicture: json['profilePicture'] as String?,
+      bio: json['bio'] as String?,
+      location: json['location'] as String?,
+      role: json['role'] as String?,
+      status: json['status'] as String?,
+      totalTrips: _parseIntValue(json['totalTrips']),
+      completedTrips: _parseIntValue(json['completedTrips']),
     );
   }
 
@@ -65,6 +98,7 @@ class AuthApiModel {
   // fromEntity
   factory AuthApiModel.fromEntity(AuthEntity entity) {
     return AuthApiModel(
+      id: entity.authId,
       fullName: entity.fullName,
       email: entity.email,
       phoneNumber: entity.phoneNumber,

@@ -1,8 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tripmates/core/utils/platform_util.dart';
+import 'package:tripmates/features/auth/domain/usecases/forgot_password_usecase.dart';
 import 'package:tripmates/features/auth/domain/usecases/get_current_user_usecase.dart';
 import 'package:tripmates/features/auth/domain/usecases/login_usecase.dart';
 import 'package:tripmates/features/auth/domain/usecases/logout_usecase.dart';
 import 'package:tripmates/features/auth/domain/usecases/register_usecase.dart';
+import 'package:tripmates/features/auth/domain/usecases/reset_password_usecase.dart';
 import 'package:tripmates/features/auth/presentation/state/auth_state.dart';
 
 final authViewModelProvider = NotifierProvider<AuthViewModel, AuthState>(
@@ -14,6 +17,8 @@ class AuthViewModel extends Notifier<AuthState> {
   late final LoginUsecase _loginUsecase;
   late final GetCurrentUserUsecase _getCurrentUserUsecase;
   late final LogoutUsecase _logoutUsecase;
+  late final ForgotPasswordUsecase _forgotPasswordUsecase;
+  late final ResetPasswordUsecase _resetPasswordUsecase;
 
   @override
   AuthState build() {
@@ -21,6 +26,8 @@ class AuthViewModel extends Notifier<AuthState> {
     _loginUsecase = ref.read(loginUsecaseProvider);
     _getCurrentUserUsecase = ref.read(getCurrentUserUsecaseProvider);
     _logoutUsecase = ref.read(logoutUsecaseProvider);
+    _forgotPasswordUsecase = ref.read(forgotPasswordUsecaseProvider);
+    _resetPasswordUsecase = ref.read(resetPasswordUsecaseProvider);
     return const AuthState();
   }
 
@@ -100,6 +107,65 @@ class AuthViewModel extends Notifier<AuthState> {
         status: AuthStatus.unauthenticated,
         user: null,
       ),
+    );
+  }
+
+  Future<bool> forgotPassword({required String email}) async {
+    state = state.copyWith(status: AuthStatus.loading, clearError: true);
+
+    final detectedPlatform = PlatformUtil.getPlatformString();
+    print('🔐 [AuthViewModel] forgotPassword called');
+    print(
+      '   Platform detected: $detectedPlatform (isAndroid: ${PlatformUtil.isAndroid}, isIOS: ${PlatformUtil.isIOS}, isWeb: ${PlatformUtil.isWeb})',
+    );
+    print('   Email: $email');
+
+    final result = await _forgotPasswordUsecase(
+      ForgotPasswordParams(email: email, platform: detectedPlatform),
+    );
+
+    return result.fold(
+      (failure) {
+        state = state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: failure.message,
+        );
+        return false;
+      },
+      (success) {
+        state = state.copyWith(status: AuthStatus.initial, clearError: true);
+        return success;
+      },
+    );
+  }
+
+  Future<bool> resetPassword({
+    required String token,
+    required String password,
+    required String confirmPassword,
+  }) async {
+    state = state.copyWith(status: AuthStatus.loading, clearError: true);
+
+    final result = await _resetPasswordUsecase(
+      ResetPasswordParams(
+        token: token,
+        password: password,
+        confirmPassword: confirmPassword,
+      ),
+    );
+
+    return result.fold(
+      (failure) {
+        state = state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: failure.message,
+        );
+        return false;
+      },
+      (success) {
+        state = state.copyWith(status: AuthStatus.initial, clearError: true);
+        return success;
+      },
     );
   }
 

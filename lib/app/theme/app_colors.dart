@@ -169,7 +169,7 @@ class AppColors {
     BoxShadow(color: Color(0x1A000000), blurRadius: 12, offset: Offset(0, 4)),
   ];
 
-  static Color? BackgroundLight;
+  static Color? backgroundLight;
 
   static Color? get danger => null;
 

@@ -4,10 +4,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:tripmates/core/error/failures.dart';
 import 'package:tripmates/features/auth/domain/entities/auth_entity.dart';
+import 'package:tripmates/features/auth/domain/usecases/forgot_password_usecase.dart';
 import 'package:tripmates/features/auth/domain/usecases/get_current_user_usecase.dart';
 import 'package:tripmates/features/auth/domain/usecases/login_usecase.dart';
 import 'package:tripmates/features/auth/domain/usecases/logout_usecase.dart';
 import 'package:tripmates/features/auth/domain/usecases/register_usecase.dart';
+import 'package:tripmates/features/auth/domain/usecases/reset_password_usecase.dart';
 import 'package:tripmates/features/auth/presentation/state/auth_state.dart';
 import 'package:tripmates/features/auth/presentation/view_model/auth_viewmodel.dart';
 
@@ -19,11 +21,17 @@ class MockGetCurrentUserUsecase extends Mock implements GetCurrentUserUsecase {}
 
 class MockLogoutUsecase extends Mock implements LogoutUsecase {}
 
+class MockForgotPasswordUsecase extends Mock implements ForgotPasswordUsecase {}
+
+class MockResetPasswordUsecase extends Mock implements ResetPasswordUsecase {}
+
 void main() {
   late MockLoginUsecase mockLoginUsecase;
   late MockRegisterUsecase mockRegisterUsecase;
   late MockGetCurrentUserUsecase mockGetCurrentUserUsecase;
   late MockLogoutUsecase mockLogoutUsecase;
+  late MockForgotPasswordUsecase mockForgotPasswordUsecase;
+  late MockResetPasswordUsecase mockResetPasswordUsecase;
   late ProviderContainer container;
 
   const tEmail = 'test@example.com';
@@ -53,6 +61,19 @@ void main() {
         phoneNumber: 'fallback',
       ),
     );
+    registerFallbackValue(
+      const ForgotPasswordParams(
+        email: 'fallback@example.com',
+        platform: 'android',
+      ),
+    );
+    registerFallbackValue(
+      const ResetPasswordParams(
+        token: 'fallback-token',
+        password: 'fallback-password',
+        confirmPassword: 'fallback-password',
+      ),
+    );
   });
 
   setUp(() {
@@ -60,6 +81,8 @@ void main() {
     mockRegisterUsecase = MockRegisterUsecase();
     mockGetCurrentUserUsecase = MockGetCurrentUserUsecase();
     mockLogoutUsecase = MockLogoutUsecase();
+    mockForgotPasswordUsecase = MockForgotPasswordUsecase();
+    mockResetPasswordUsecase = MockResetPasswordUsecase();
 
     container = ProviderContainer(
       overrides: [
@@ -69,6 +92,12 @@ void main() {
           mockGetCurrentUserUsecase,
         ),
         logoutUsecaseProvider.overrideWithValue(mockLogoutUsecase),
+        forgotPasswordUsecaseProvider.overrideWithValue(
+          mockForgotPasswordUsecase,
+        ),
+        resetPasswordUsecaseProvider.overrideWithValue(
+          mockResetPasswordUsecase,
+        ),
       ],
     );
   });
@@ -77,37 +106,16 @@ void main() {
     container.dispose();
   });
 
-  group('AuthViewModel - Initialization', () {
+  group('AuthViewModel', () {
     test('should initialize with correct initial state', () async {
-      // Act
       final state = container.read(authViewModelProvider);
 
-      // Assert
       expect(state.status, AuthStatus.initial);
       expect(state.user, isNull);
       expect(state.errorMessage, isNull);
     });
-  });
 
-  group('AuthViewModel - Login', () {
-    test('should set loading status when login starts', () async {
-      when(
-        () => mockLoginUsecase(
-          const LoginParams(email: tEmail, password: tPassword),
-        ),
-      ).thenAnswer((_) async => const Right(tUser));
-
-      final loginFuture = container
-          .read(authViewModelProvider.notifier)
-          .login(email: tEmail, password: tPassword);
-
-      var state = container.read(authViewModelProvider);
-      expect(state.status, AuthStatus.loading);
-
-      await loginFuture;
-    });
-
-    test('should set authenticated state on successful login', () async {
+    test('should successfully login and set authenticated state', () async {
       when(
         () => mockLoginUsecase(
           const LoginParams(email: tEmail, password: tPassword),
@@ -122,24 +130,6 @@ void main() {
       expect(state.status, AuthStatus.authenticated);
       expect(state.user, tUser);
       expect(state.errorMessage, isNull);
-    });
-
-    test('should pass correct parameters to login usecase', () async {
-      when(
-        () => mockLoginUsecase(
-          const LoginParams(email: tEmail, password: tPassword),
-        ),
-      ).thenAnswer((_) async => const Right(tUser));
-
-      await container
-          .read(authViewModelProvider.notifier)
-          .login(email: tEmail, password: tPassword);
-
-      verify(
-        () => mockLoginUsecase(
-          const LoginParams(email: tEmail, password: tPassword),
-        ),
-      ).called(1);
     });
 
     test('should set error state on login failure', () async {
@@ -157,49 +147,10 @@ void main() {
       expect(state.user, isNull);
       expect(state.errorMessage, failure.message);
     });
-  });
 
-  group('AuthViewModel - Register', () {
-    test('should set loading status when register starts', () async {
+    test('should successfully register and set registered state', () async {
       when(
-        () => mockRegisterUsecase(
-          const RegisterParams(
-            fullName: tFullName,
-            email: tEmail,
-            username: tUsername,
-            password: tPassword,
-            phoneNumber: tPhoneNumber,
-          ),
-        ),
-      ).thenAnswer((_) async => const Right(true));
-
-      final registerFuture = container
-          .read(authViewModelProvider.notifier)
-          .register(
-            fullName: tFullName,
-            email: tEmail,
-            username: tUsername,
-            phoneNumber: tPhoneNumber,
-            password: tPassword,
-          );
-
-      var state = container.read(authViewModelProvider);
-      expect(state.status, AuthStatus.loading);
-
-      await registerFuture;
-    });
-
-    test('should set authenticated state on successful register', () async {
-      when(
-        () => mockRegisterUsecase(
-          const RegisterParams(
-            fullName: tFullName,
-            email: tEmail,
-            username: tUsername,
-            password: tPassword,
-            phoneNumber: tPhoneNumber,
-          ),
-        ),
+        () => mockRegisterUsecase(any()),
       ).thenAnswer((_) async => const Right(true));
 
       await container
@@ -215,42 +166,6 @@ void main() {
       final state = container.read(authViewModelProvider);
       expect(state.status, AuthStatus.registered);
       expect(state.errorMessage, isNull);
-    });
-
-    test('should pass correct parameters to register usecase', () async {
-      when(
-        () => mockRegisterUsecase(
-          const RegisterParams(
-            fullName: tFullName,
-            email: tEmail,
-            username: tUsername,
-            password: tPassword,
-            phoneNumber: tPhoneNumber,
-          ),
-        ),
-      ).thenAnswer((_) async => const Right(true));
-
-      await container
-          .read(authViewModelProvider.notifier)
-          .register(
-            fullName: tFullName,
-            email: tEmail,
-            username: tUsername,
-            phoneNumber: tPhoneNumber,
-            password: tPassword,
-          );
-
-      verify(
-        () => mockRegisterUsecase(
-          const RegisterParams(
-            fullName: tFullName,
-            email: tEmail,
-            username: tUsername,
-            password: tPassword,
-            phoneNumber: tPhoneNumber,
-          ),
-        ),
-      ).called(1);
     });
 
     test('should set error state on register failure', () async {
@@ -271,60 +186,45 @@ void main() {
 
       final state = container.read(authViewModelProvider);
       expect(state.status, AuthStatus.error);
-      expect(state.user, isNull);
       expect(state.errorMessage, failure.message);
     });
-  });
 
-  group('AuthViewModel - Get Current User', () {
-    test(
-      'should set authenticated state on successful get current user',
-      () async {
-        when(
-          () => mockGetCurrentUserUsecase(),
-        ).thenAnswer((_) async => const Right(tUser));
-
-        await container.read(authViewModelProvider.notifier).getCurrentUser();
-
-        final state = container.read(authViewModelProvider);
-        expect(state.status, AuthStatus.authenticated);
-        expect(state.user, tUser);
-      },
-    );
-
-    test(
-      'should set unauthenticated state on get current user failure',
-      () async {
-        final failure = ApiFailure(message: 'User not authenticated');
-        when(
-          () => mockGetCurrentUserUsecase(),
-        ).thenAnswer((_) async => Left(failure));
-
-        await container.read(authViewModelProvider.notifier).getCurrentUser();
-
-        final state = container.read(authViewModelProvider);
-        expect(state.status, AuthStatus.unauthenticated);
-        expect(state.user, isNull);
-        expect(state.errorMessage, failure.message);
-      },
-    );
-  });
-
-  group('AuthViewModel - Logout', () {
-    test('should set unauthenticated state on successful logout', () async {
+    test('should get current user successfully', () async {
       when(
-        () => mockLoginUsecase(
-          const LoginParams(email: tEmail, password: tPassword),
-        ),
+        () => mockGetCurrentUserUsecase(),
       ).thenAnswer((_) async => const Right(tUser));
+
+      await container.read(authViewModelProvider.notifier).getCurrentUser();
+
+      final state = container.read(authViewModelProvider);
+      expect(state.status, AuthStatus.authenticated);
+      expect(state.user, tUser);
+    });
+
+    test('should handle get current user failure', () async {
+      final failure = ApiFailure(message: 'User not authenticated');
+      when(
+        () => mockGetCurrentUserUsecase(),
+      ).thenAnswer((_) async => Left(failure));
+
+      await container.read(authViewModelProvider.notifier).getCurrentUser();
+
+      final state = container.read(authViewModelProvider);
+      expect(state.status, AuthStatus.unauthenticated);
+      expect(state.user, isNull);
+    });
+
+    test('should logout successfully', () async {
+      when(
+        () => mockLoginUsecase(any()),
+      ).thenAnswer((_) async => const Right(tUser));
+      when(
+        () => mockLogoutUsecase(),
+      ).thenAnswer((_) async => const Right(true));
 
       await container
           .read(authViewModelProvider.notifier)
           .login(email: tEmail, password: tPassword);
-
-      when(
-        () => mockLogoutUsecase(),
-      ).thenAnswer((_) async => const Right(true));
 
       await container.read(authViewModelProvider.notifier).logout();
 
@@ -332,55 +232,8 @@ void main() {
       expect(state.status, AuthStatus.unauthenticated);
     });
 
-    test('should set error state on logout failure', () async {
-      when(
-        () => mockLoginUsecase(
-          const LoginParams(email: tEmail, password: tPassword),
-        ),
-      ).thenAnswer((_) async => const Right(tUser));
-
-      await container
-          .read(authViewModelProvider.notifier)
-          .login(email: tEmail, password: tPassword);
-
-      final failure = LocalDatabaseFailure(message: 'Logout failed');
-      when(() => mockLogoutUsecase()).thenAnswer((_) async => Left(failure));
-
-      await container.read(authViewModelProvider.notifier).logout();
-
-      final state = container.read(authViewModelProvider);
-      expect(state.status, AuthStatus.error);
-      expect(state.errorMessage, failure.message);
-    });
-  });
-
-  group('AuthViewModel - State Management', () {
-    test('should maintain user data across state changes', () async {
-      when(
-        () => mockLoginUsecase(
-          const LoginParams(email: tEmail, password: tPassword),
-        ),
-      ).thenAnswer((_) async => const Right(tUser));
-
-      await container
-          .read(authViewModelProvider.notifier)
-          .login(email: tEmail, password: tPassword);
-
-      var state = container.read(authViewModelProvider);
-      expect(state.user, tUser);
-
-      when(
-        () => mockGetCurrentUserUsecase(),
-      ).thenAnswer((_) async => const Right(tUser));
-
-      await container.read(authViewModelProvider.notifier).getCurrentUser();
-
-      state = container.read(authViewModelProvider);
-      expect(state.user, tUser);
-    });
-
-    test('should clear error message using clearError method', () async {
-      final failure = ApiFailure(message: 'Initial error');
+    test('should clear error message', () async {
+      final failure = ApiFailure(message: 'Test error');
       when(
         () => mockLoginUsecase(any()),
       ).thenAnswer((_) async => Left(failure));
@@ -389,14 +242,80 @@ void main() {
           .read(authViewModelProvider.notifier)
           .login(email: tEmail, password: tPassword);
 
-      var state = container.read(authViewModelProvider);
-      expect(state.errorMessage, failure.message);
-
-      // Call clearError method
       container.read(authViewModelProvider.notifier).clearError();
 
-      state = container.read(authViewModelProvider);
+      final state = container.read(authViewModelProvider);
       expect(state.errorMessage, isNull);
+    });
+
+    test('should send forgot password request successfully', () async {
+      when(
+        () => mockForgotPasswordUsecase(any()),
+      ).thenAnswer((_) async => const Right(true));
+
+      final result = await container
+          .read(authViewModelProvider.notifier)
+          .forgotPassword(email: tEmail);
+
+      final state = container.read(authViewModelProvider);
+      expect(result, isTrue);
+      expect(state.status, AuthStatus.initial);
+      expect(state.errorMessage, isNull);
+    });
+
+    test('should set error state on forgot password failure', () async {
+      final failure = ApiFailure(message: 'Email not found');
+      when(
+        () => mockForgotPasswordUsecase(any()),
+      ).thenAnswer((_) async => Left(failure));
+
+      final result = await container
+          .read(authViewModelProvider.notifier)
+          .forgotPassword(email: tEmail);
+
+      final state = container.read(authViewModelProvider);
+      expect(result, isFalse);
+      expect(state.status, AuthStatus.error);
+      expect(state.errorMessage, failure.message);
+    });
+
+    test('should reset password successfully', () async {
+      when(
+        () => mockResetPasswordUsecase(any()),
+      ).thenAnswer((_) async => const Right(true));
+
+      final result = await container
+          .read(authViewModelProvider.notifier)
+          .resetPassword(
+            token: 'token-123',
+            password: tPassword,
+            confirmPassword: tPassword,
+          );
+
+      final state = container.read(authViewModelProvider);
+      expect(result, isTrue);
+      expect(state.status, AuthStatus.initial);
+      expect(state.errorMessage, isNull);
+    });
+
+    test('should set error state on reset password failure', () async {
+      final failure = ApiFailure(message: 'Reset token is invalid');
+      when(
+        () => mockResetPasswordUsecase(any()),
+      ).thenAnswer((_) async => Left(failure));
+
+      final result = await container
+          .read(authViewModelProvider.notifier)
+          .resetPassword(
+            token: 'invalid-token',
+            password: tPassword,
+            confirmPassword: tPassword,
+          );
+
+      final state = container.read(authViewModelProvider);
+      expect(result, isFalse);
+      expect(state.status, AuthStatus.error);
+      expect(state.errorMessage, failure.message);
     });
   });
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tripmates/features/auth/presentation/pages/signup_page.dart';
+import 'package:tripmates/features/auth/presentation/pages/forgot_password_page.dart';
 import 'package:tripmates/features/dashboard/presentation/widgets/main_text_form_field.dart';
 import 'package:tripmates/core/utils/validation_util.dart';
 import 'package:tripmates/features/dashboard/presentation/widgets/my_button.dart';
@@ -185,7 +186,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         ),
                         TextButton(
                           onPressed: () {
-                            // TODO: Forgot password
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const ForgotPasswordPage(),
+                              ),
+                            );
                           },
                           child: const Text(
                             "Forgot Password?",
