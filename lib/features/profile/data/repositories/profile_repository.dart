@@ -1,48 +1,79 @@
 import 'dart:io';
 import 'package:dartz/dartz.dart';
-import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tripmates/core/api/api_client.dart';
-import 'package:tripmates/core/api/api_endpoints.dart';
 import 'package:tripmates/core/error/failures.dart';
-import 'package:tripmates/features/profile/data/models/profile_api_model.dart';
+import 'package:tripmates/core/services/connectivity/network_info.dart';
+import 'package:tripmates/core/services/offline/offline_operations_queue.dart';
+import 'package:tripmates/features/profile/data/datasources/local/profile_local_datasource.dart';
+import 'package:tripmates/features/profile/data/datasources/remote/profile_remote_datasource.dart';
 import 'package:tripmates/features/profile/domain/entities/profile_entity.dart';
 import 'package:tripmates/features/profile/domain/repositories/profile_repository.dart';
 
+final profileLocalDataSourceProvider = Provider<IProfileLocalDataSource>((ref) {
+  return ProfileLocalDataSource();
+});
+
 final profileRepositoryProvider = Provider<IProfileRepository>((ref) {
-  return ProfileRepository(apiClient: ref.read(apiClientProvider));
+  return ProfileRepository(
+    remoteDataSource: ref.read(profileRemoteDataSourceProvider),
+    localDataSource: ref.read(profileLocalDataSourceProvider),
+    networkInfo: ref.read(networkInfoProvider),
+    operationsQueue: ref.read(offlineOperationsQueueProvider),
+  );
 });
 
 class ProfileRepository implements IProfileRepository {
-  final ApiClient _apiClient;
+  final IProfileRemoteDataSource _remoteDataSource;
+  final IProfileLocalDataSource _localDataSource;
+  final NetworkInfo _networkInfo;
+  final OfflineOperationsQueue _operationsQueue;
 
-  ProfileRepository({required ApiClient apiClient}) : _apiClient = apiClient;
+  ProfileRepository({
+    required IProfileRemoteDataSource remoteDataSource,
+    required IProfileLocalDataSource localDataSource,
+    required NetworkInfo networkInfo,
+    required OfflineOperationsQueue operationsQueue,
+  }) : _remoteDataSource = remoteDataSource,
+       _localDataSource = localDataSource,
+       _networkInfo = networkInfo,
+       _operationsQueue = operationsQueue;
 
   @override
   Future<Either<Failure, ProfileEntity>> getProfile(String userId) async {
-    try {
-      final response = await _apiClient.get(ApiEndpoints.userProfile(userId));
+    // Check network connectivity
+    final isConnected = await _networkInfo.isConnected;
 
-      if (response.data['success'] == true) {
-        final data = response.data['data'] as Map<String, dynamic>;
-        final profile = ProfileApiModel.fromJson(data);
-        return Right(profile.toEntity());
+    if (isConnected) {
+      // Try to fetch from remote
+      final remoteResult = await _remoteDataSource.getProfile(userId);
+
+      return remoteResult.fold(
+        (failure) async {
+          // Remote failed, fallback to cache
+          print('⚠️ [ProfileRepo] Remote failed, trying cache...');
+          final cachedProfile = await _localDataSource.getCachedProfile(userId);
+          if (cachedProfile != null) {
+            print('✅ [ProfileRepo] Using cached profile');
+            return Right(cachedProfile);
+          }
+          return Left(failure);
+        },
+        (profile) async {
+          // Remote succeeded, cache it
+          await _localDataSource.cacheProfile(profile);
+          return Right(profile);
+        },
+      );
+    } else {
+      // Offline, use cache only
+      print('📵 [ProfileRepo] Offline, using cache for profile');
+      final cachedProfile = await _localDataSource.getCachedProfile(userId);
+      if (cachedProfile != null) {
+        return Right(cachedProfile);
       }
-
       return Left(
-        ApiFailure(
-          message: response.data['message'] ?? 'Failed to get profile',
-        ),
+        NetworkFailure(message: 'No internet connection and no cached data'),
       );
-    } on DioException catch (e) {
-      return Left(
-        ApiFailure(
-          message: e.response?.data['message'] ?? 'Failed to get profile',
-          statusCode: e.response?.statusCode,
-        ),
-      );
-    } catch (e) {
-      return Left(ApiFailure(message: e.toString()));
     }
   }
 
@@ -54,37 +85,44 @@ class ProfileRepository implements IProfileRepository {
           ApiFailure(message: 'User id is required to update profile'),
         );
       }
-      // Create form data for multipart request
-      final formData = FormData.fromMap({
-        if (profile.fullName.isNotEmpty) 'fullName': profile.fullName,
-        if (profile.phone != null && profile.phone!.isNotEmpty)
-          'phoneNumber': profile.phone,
-        if (profile.bio != null && profile.bio!.isNotEmpty) 'bio': profile.bio,
-        if (profile.location != null && profile.location!.isNotEmpty)
-          'location': profile.location,
-      });
 
-      final response = await _apiClient.put(
-        ApiEndpoints.updateUserProfile(profile.userId!),
-        data: formData,
-      );
+      // Check network connectivity
+      final isConnected = await _networkInfo.isConnected;
 
-      if (response.data['success'] == true) {
+      if (isConnected) {
+        // Online: update remote and cache
+        final remoteResult = await _remoteDataSource.updateProfile(profile);
+
+        return remoteResult.fold((failure) => Left(failure), (success) async {
+          // Update succeeded, cache the updated profile
+          await _localDataSource.cacheProfile(profile);
+          return const Right(true);
+        });
+      } else {
+        // Offline: queue operation and cache locally
+        print('📵 [ProfileRepo] Offline, queueing profile update');
+
+        await _operationsQueue.queueOperation(
+          id: 'profile_update_${profile.userId}_${DateTime.now().millisecondsSinceEpoch}',
+          feature: 'profile',
+          type: OperationType.update,
+          data: {
+            'userId': profile.userId,
+            'fullName': profile.fullName,
+            'email': profile.email,
+            'phone': profile.phone,
+            'bio': profile.bio,
+            'location': profile.location,
+            'profilePicture': profile.profilePicture,
+          },
+        );
+
+        // Update local cache
+        await _localDataSource.cacheProfile(profile);
+
+        print('✅ [ProfileRepo] Profile update queued and cached locally');
         return const Right(true);
       }
-
-      return Left(
-        ApiFailure(
-          message: response.data['message'] ?? 'Failed to update profile',
-        ),
-      );
-    } on DioException catch (e) {
-      return Left(
-        ApiFailure(
-          message: e.response?.data['message'] ?? 'Failed to update profile',
-          statusCode: e.response?.statusCode,
-        ),
-      );
     } catch (e) {
       return Left(ApiFailure(message: e.toString()));
     }
@@ -117,59 +155,16 @@ class ProfileRepository implements IProfileRepository {
     File photo,
     String userId,
   ) async {
-    try {
-      if (userId.isEmpty) {
-        return Left(
-          ApiFailure(message: 'User id is required to upload profile image'),
-        );
-      }
+    // Check network connectivity
+    final isConnected = await _networkInfo.isConnected;
 
-      final fileName = photo.path.split('/').last;
-      final formData = FormData.fromMap({
-        'profileImage': await MultipartFile.fromFile(
-          photo.path,
-          filename: fileName,
-        ),
-      });
-
-      final response = await _apiClient.put(
-        '${ApiEndpoints.updateProfile}/$userId',
-        data: formData,
-      );
-
-      // Ensure response data is a JSON map before indexing
-      if (response.data is Map && response.data['success'] == true) {
-        final data = response.data['data'] as Map<String, dynamic>;
-        final profileImagePath = data['profileImagePath'] as String?;
-
-        if (profileImagePath != null && profileImagePath.isNotEmpty) {
-          // Resolve the full URL
-          if (profileImagePath.startsWith('http')) {
-            return Right(profileImagePath);
-          }
-          final cleaned = profileImagePath.startsWith('/')
-              ? profileImagePath.substring(1)
-              : profileImagePath;
-          return Right('${ApiEndpoints.baseOrigin}/$cleaned');
-        }
-
-        return Left(ApiFailure(message: 'No profile image path returned'));
-      }
-
+    if (!isConnected) {
       return Left(
-        ApiFailure(
-          message: response.data['message'] ?? 'Failed to upload image',
-        ),
+        NetworkFailure(message: 'Cannot upload profile picture while offline'),
       );
-    } on DioException catch (e) {
-      return Left(
-        ApiFailure(
-          message: e.response?.data['message'] ?? 'Failed to upload image',
-          statusCode: e.response?.statusCode,
-        ),
-      );
-    } catch (e) {
-      return Left(ApiFailure(message: e.toString()));
     }
+
+    // Delegate to remote data source
+    return await _remoteDataSource.uploadProfilePicture(photo, userId);
   }
 }
