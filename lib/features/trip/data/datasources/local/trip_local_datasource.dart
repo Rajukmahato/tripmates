@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tripmates/core/providers/app_providers.dart';
 import 'package:tripmates/core/services/hive/hive_service.dart';
 import 'package:tripmates/features/trip/data/datasources/trip_datasource.dart';
 import 'package:tripmates/features/trip/data/models/trip_hive_model.dart';
@@ -28,12 +29,12 @@ class TripLocalDatasource implements ITripDataSource {
 
   @override
   Future<List<TripHiveModel>> getAllTrips() async {
-    return await _hiveService.getAllTrips();
+    return _hiveService.getAllTrips();
   }
 
   @override
   Future<TripHiveModel?> getTripById(String tripId) async {
-    return await _hiveService.getTripById(tripId);
+    return _hiveService.getTripById(tripId);
   }
 
   @override
@@ -43,7 +44,7 @@ class TripLocalDatasource implements ITripDataSource {
 
   @override
   Future<List<TripHiveModel>> getMyTrips(String userId) async {
-    final allTrips = await _hiveService.getAllTrips();
+    final allTrips = _hiveService.getAllTrips();
     return allTrips.where((trip) => trip.createdBy == userId).toList();
   }
 }
