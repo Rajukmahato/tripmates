@@ -29,13 +29,37 @@ class TripHiveModelAdapter extends TypeAdapter<TripHiveModel> {
       mediaType: fields[9] as String?,
       status: fields[10] as String?,
       destinationIds: (fields[11] as List?)?.cast<String>(),
+      budget: fields[12] as double?,
+      difficultyLevel: fields[13] as String?,
+      activities: (fields[14] as List?)?.cast<String>(),
+      distanceMin: fields[15] as double?,
+      distanceMax: fields[16] as double?,
+      distanceUnit: fields[17] as String?,
+      durationMinHours: fields[18] as int?,
+      durationMaxHours: fields[19] as int?,
+      physicalDemand: fields[20] as String?,
+      skillLevelRequired: fields[21] as String?,
+      fitnessLevel: fields[22] as String?,
+      elevationMin: fields[23] as int?,
+      elevationMax: fields[24] as int?,
+      elevationUnit: fields[25] as String?,
+      bestSeason: fields[26] as String?,
+      mealsIncluded: fields[27] as String?,
+      accommodationType: fields[28] as String?,
+      videoUrl: fields[29] as String?,
+      hasGroupChat: fields[30] as bool?,
+      emergencySupportPhone: fields[31] as String?,
+      isFeatured: fields[32] as bool?,
+      isPublic: fields[33] as bool?,
+      averageRating: fields[34] as double?,
+      reviewCount: fields[35] as int?,
     );
   }
 
   @override
   void write(BinaryWriter writer, TripHiveModel obj) {
     writer
-      ..writeByte(12)
+      ..writeByte(36)
       ..writeByte(0)
       ..write(obj.tripId)
       ..writeByte(1)
@@ -59,7 +83,55 @@ class TripHiveModelAdapter extends TypeAdapter<TripHiveModel> {
       ..writeByte(10)
       ..write(obj.status)
       ..writeByte(11)
-      ..write(obj.destinationIds);
+      ..write(obj.destinationIds)
+      ..writeByte(12)
+      ..write(obj.budget)
+      ..writeByte(13)
+      ..write(obj.difficultyLevel)
+      ..writeByte(14)
+      ..write(obj.activities)
+      ..writeByte(15)
+      ..write(obj.distanceMin)
+      ..writeByte(16)
+      ..write(obj.distanceMax)
+      ..writeByte(17)
+      ..write(obj.distanceUnit)
+      ..writeByte(18)
+      ..write(obj.durationMinHours)
+      ..writeByte(19)
+      ..write(obj.durationMaxHours)
+      ..writeByte(20)
+      ..write(obj.physicalDemand)
+      ..writeByte(21)
+      ..write(obj.skillLevelRequired)
+      ..writeByte(22)
+      ..write(obj.fitnessLevel)
+      ..writeByte(23)
+      ..write(obj.elevationMin)
+      ..writeByte(24)
+      ..write(obj.elevationMax)
+      ..writeByte(25)
+      ..write(obj.elevationUnit)
+      ..writeByte(26)
+      ..write(obj.bestSeason)
+      ..writeByte(27)
+      ..write(obj.mealsIncluded)
+      ..writeByte(28)
+      ..write(obj.accommodationType)
+      ..writeByte(29)
+      ..write(obj.videoUrl)
+      ..writeByte(30)
+      ..write(obj.hasGroupChat)
+      ..writeByte(31)
+      ..write(obj.emergencySupportPhone)
+      ..writeByte(32)
+      ..write(obj.isFeatured)
+      ..writeByte(33)
+      ..write(obj.isPublic)
+      ..writeByte(34)
+      ..write(obj.averageRating)
+      ..writeByte(35)
+      ..write(obj.reviewCount);
   }
 
   @override

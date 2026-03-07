@@ -43,6 +43,79 @@ class TripHiveModel extends HiveObject {
   @HiveField(11)
   final List<String>? destinationIds;
 
+  // Web-parity fields added (HiveField 12+)
+  @HiveField(12)
+  final double? budget;
+
+  @HiveField(13)
+  final String? difficultyLevel;
+
+  @HiveField(14)
+  final List<String>? activities;
+
+  @HiveField(15)
+  final double? distanceMin;
+
+  @HiveField(16)
+  final double? distanceMax;
+
+  @HiveField(17)
+  final String? distanceUnit;
+
+  @HiveField(18)
+  final int? durationMinHours;
+
+  @HiveField(19)
+  final int? durationMaxHours;
+
+  @HiveField(20)
+  final String? physicalDemand;
+
+  @HiveField(21)
+  final String? skillLevelRequired;
+
+  @HiveField(22)
+  final String? fitnessLevel;
+
+  @HiveField(23)
+  final int? elevationMin;
+
+  @HiveField(24)
+  final int? elevationMax;
+
+  @HiveField(25)
+  final String? elevationUnit;
+
+  @HiveField(26)
+  final String? bestSeason;
+
+  @HiveField(27)
+  final String? mealsIncluded;
+
+  @HiveField(28)
+  final String? accommodationType;
+
+  @HiveField(29)
+  final String? videoUrl;
+
+  @HiveField(30)
+  final bool? hasGroupChat;
+
+  @HiveField(31)
+  final String? emergencySupportPhone;
+
+  @HiveField(32)
+  final bool? isFeatured;
+
+  @HiveField(33)
+  final bool? isPublic;
+
+  @HiveField(34)
+  final double? averageRating;
+
+  @HiveField(35)
+  final int? reviewCount;
+
   TripHiveModel({
     String? tripId,
     this.createdBy,
@@ -56,6 +129,30 @@ class TripHiveModel extends HiveObject {
     this.mediaType,
     String? status,
     this.destinationIds,
+    this.budget,
+    this.difficultyLevel,
+    this.activities,
+    this.distanceMin,
+    this.distanceMax,
+    this.distanceUnit,
+    this.durationMinHours,
+    this.durationMaxHours,
+    this.physicalDemand,
+    this.skillLevelRequired,
+    this.fitnessLevel,
+    this.elevationMin,
+    this.elevationMax,
+    this.elevationUnit,
+    this.bestSeason,
+    this.mealsIncluded,
+    this.accommodationType,
+    this.videoUrl,
+    this.hasGroupChat,
+    this.emergencySupportPhone,
+    this.isFeatured,
+    this.isPublic,
+    this.averageRating,
+    this.reviewCount,
   }) : tripId = tripId ?? const Uuid().v4(),
        status = status ?? 'planned';
 
@@ -77,6 +174,30 @@ class TripHiveModel extends HiveObject {
           ? TripStatus.ongoing
           : TripStatus.completed,
       destinationIds: destinationIds,
+      budget: budget,
+      difficultyLevel: difficultyLevel,
+      activities: activities,
+      distanceMin: distanceMin,
+      distanceMax: distanceMax,
+      distanceUnit: distanceUnit,
+      durationMinHours: durationMinHours,
+      durationMaxHours: durationMaxHours,
+      physicalDemand: physicalDemand,
+      skillLevelRequired: skillLevelRequired,
+      fitnessLevel: fitnessLevel,
+      elevationMin: elevationMin,
+      elevationMax: elevationMax,
+      elevationUnit: elevationUnit,
+      bestSeason: bestSeason,
+      mealsIncluded: mealsIncluded,
+      accommodationType: accommodationType,
+      videoUrl: videoUrl,
+      hasGroupChat: hasGroupChat,
+      emergencySupportPhone: emergencySupportPhone,
+      isFeatured: isFeatured,
+      isPublic: isPublic,
+      averageRating: averageRating,
+      reviewCount: reviewCount,
     );
   }
 
@@ -94,6 +215,30 @@ class TripHiveModel extends HiveObject {
       mediaType: entity.mediaType,
       status: entity.status.toString().split('.').last,
       destinationIds: entity.destinationIds,
+      budget: entity.budget,
+      difficultyLevel: entity.difficultyLevel,
+      activities: entity.activities,
+      distanceMin: entity.distanceMin,
+      distanceMax: entity.distanceMax,
+      distanceUnit: entity.distanceUnit,
+      durationMinHours: entity.durationMinHours,
+      durationMaxHours: entity.durationMaxHours,
+      physicalDemand: entity.physicalDemand,
+      skillLevelRequired: entity.skillLevelRequired,
+      fitnessLevel: entity.fitnessLevel,
+      elevationMin: entity.elevationMin,
+      elevationMax: entity.elevationMax,
+      elevationUnit: entity.elevationUnit,
+      bestSeason: entity.bestSeason,
+      mealsIncluded: entity.mealsIncluded,
+      accommodationType: entity.accommodationType,
+      videoUrl: entity.videoUrl,
+      hasGroupChat: entity.hasGroupChat,
+      emergencySupportPhone: entity.emergencySupportPhone,
+      isFeatured: entity.isFeatured,
+      isPublic: entity.isPublic,
+      averageRating: entity.averageRating,
+      reviewCount: entity.reviewCount,
     );
   }
 
