@@ -106,6 +106,21 @@ class ApiClient {
     );
   }
 
+  // PATCH request
+  Future<Response> patch(
+    String path, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async {
+    return _dio.patch(
+      path,
+      data: data,
+      queryParameters: queryParameters,
+      options: options,
+    );
+  }
+
   // DELETE request
   Future<Response> delete(
     String path, {
@@ -149,9 +164,12 @@ class _AuthInterceptor extends Interceptor {
   ) async {
     // Skip auth for public endpoints
     final publicEndpoints = [
-      ApiEndpoints.batches,
-      ApiEndpoints.categories,
-      ApiEndpoints.studentLogin,
+      ApiEndpoints.trips, // GET trips is public
+      ApiEndpoints.destinations,
+      ApiEndpoints.authLogin,
+      ApiEndpoints.authRegister,
+      ApiEndpoints.authForgotPassword,
+      ApiEndpoints.authResetPassword,
     ];
 
     final isPublicGet =
@@ -159,8 +177,10 @@ class _AuthInterceptor extends Interceptor {
         publicEndpoints.any((endpoint) => options.path.startsWith(endpoint));
 
     final isAuthEndpoint =
-        options.path == ApiEndpoints.studentLogin ||
-        options.path == ApiEndpoints.students;
+        options.path == ApiEndpoints.authLogin ||
+        options.path == ApiEndpoints.authRegister ||
+        options.path == ApiEndpoints.authForgotPassword ||
+        options.path == ApiEndpoints.authResetPassword;
 
     if (!isPublicGet && !isAuthEndpoint) {
       final token = await _storage.read(key: _tokenKey);

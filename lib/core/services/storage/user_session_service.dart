@@ -1,19 +1,9 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-// SharedPreferences instance provider
-final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
-  throw UnimplementedError('SharedPreferences must be overridden in main.dart');
-});
-
-// UserSessionService provider
-final userSessionServiceProvider = Provider<UserSessionService>((ref) {
-  final prefs = ref.read(sharedPreferencesProvider);
-  return UserSessionService(prefs: prefs);
-});
 
 class UserSessionService {
   final SharedPreferences _prefs;
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   // Keys for storing user data
   static const String _keyIsLoggedIn = 'is_logged_in';
@@ -24,8 +14,13 @@ class UserSessionService {
   static const String _keyUserPhoneNumber = 'user_phone_number';
   static const String _keyUserBatchId = 'user_batch_id';
   static const String _keyUserProfilePicture = 'user_profile_picture';
+  static const String _keyUserBio = 'user_bio';
+  static const String _keyUserLocation = 'user_location';
+  static const String _keyUserRole = 'user_role';
+  static const String _keyUserTotalTrips = 'user_total_trips';
+  static const String _keyUserCompletedTrips = 'user_completed_trips';
 
-  UserSessionService({required SharedPreferences prefs}) : _prefs = prefs;
+  UserSessionService(SharedPreferences prefs) : _prefs = prefs;
 
   // Save user session after login
   Future<void> saveUserSession({
@@ -36,6 +31,11 @@ class UserSessionService {
     String? phoneNumber,
     String? batchId,
     String? profilePicture,
+    String? bio,
+    String? location,
+    String? role,
+    int? totalTrips,
+    int? completedTrips,
   }) async {
     await _prefs.setBool(_keyIsLoggedIn, true);
     await _prefs.setString(_keyUserId, userId);
@@ -50,6 +50,21 @@ class UserSessionService {
     }
     if (profilePicture != null) {
       await _prefs.setString(_keyUserProfilePicture, profilePicture);
+    }
+    if (bio != null) {
+      await _prefs.setString(_keyUserBio, bio);
+    }
+    if (location != null) {
+      await _prefs.setString(_keyUserLocation, location);
+    }
+    if (role != null) {
+      await _prefs.setString(_keyUserRole, role);
+    }
+    if (totalTrips != null) {
+      await _prefs.setInt(_keyUserTotalTrips, totalTrips);
+    }
+    if (completedTrips != null) {
+      await _prefs.setInt(_keyUserCompletedTrips, completedTrips);
     }
   }
 
@@ -93,6 +108,31 @@ class UserSessionService {
     return _prefs.getString(_keyUserProfilePicture);
   }
 
+  // Get current user bio
+  String? getCurrentUserBio() {
+    return _prefs.getString(_keyUserBio);
+  }
+
+  // Get current user location
+  String? getCurrentUserLocation() {
+    return _prefs.getString(_keyUserLocation);
+  }
+
+  // Get current user role
+  String? getCurrentUserRole() {
+    return _prefs.getString(_keyUserRole);
+  }
+
+  // Get current user total trips
+  int? getCurrentUserTotalTrips() {
+    return _prefs.getInt(_keyUserTotalTrips);
+  }
+
+  // Get current user completed trips
+  int? getCurrentUserCompletedTrips() {
+    return _prefs.getInt(_keyUserCompletedTrips);
+  }
+
   // Clear user session (logout)
   Future<void> clearSession() async {
     await _prefs.remove(_keyIsLoggedIn);
@@ -103,5 +143,26 @@ class UserSessionService {
     await _prefs.remove(_keyUserPhoneNumber);
     await _prefs.remove(_keyUserBatchId);
     await _prefs.remove(_keyUserProfilePicture);
+    await _prefs.remove(_keyUserBio);
+    await _prefs.remove(_keyUserLocation);
+    await _prefs.remove(_keyUserRole);
+    await _prefs.remove(_keyUserTotalTrips);
+    await _prefs.remove(_keyUserCompletedTrips);
+
+    // Also remove token from FlutterSecureStorage
+    await _secureStorage.delete(key: 'auth_token');
   }
+
+  /// Alias methods for app_providers.dart compatibility
+  String? getUserId() => getCurrentUserId();
+  String? getUserEmail() => getCurrentUserEmail();
+  String? getUserFullName() => getCurrentUserFullName();
+  String? getUserUsername() => getCurrentUserUsername();
+  String? getUserPhoneNumber() => getCurrentUserPhoneNumber();
+  String? getUserProfilePicture() => getCurrentUserProfilePicture();
+  String? getUserBio() => getCurrentUserBio();
+  String? getUserLocation() => getCurrentUserLocation();
+  String? getUserRole() => getCurrentUserRole();
+  int? getUserTotalTrips() => getCurrentUserTotalTrips();
+  int? getUserCompletedTrips() => getCurrentUserCompletedTrips();
 }

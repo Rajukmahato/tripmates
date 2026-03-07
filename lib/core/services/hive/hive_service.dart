@@ -1,16 +1,13 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'package:tripmates/core/constants/hive_table_constant.dart';
 import 'package:tripmates/features/auth/data/models/auth_hive_model.dart';
 import 'package:tripmates/features/category/data/models/category_hive_model.dart';
+import 'package:tripmates/features/chat/data/models/chat_hive_model.dart';
 import 'package:tripmates/features/trip/data/models/trip_hive_model.dart';
 import 'package:tripmates/features/destination/data/models/destination_hive_model.dart';
 import 'package:tripmates/features/profile/data/models/profile_hive_model.dart';
+import 'package:tripmates/features/location/data/models/location_hive_model.dart';
 import 'package:path_provider/path_provider.dart';
-
-final hiveServiceProvider = Provider<HiveService>((ref) {
-  return HiveService();
-});
 
 class HiveService {
   // init
@@ -108,6 +105,15 @@ class HiveService {
     if (!Hive.isAdapterRegistered(HiveTableConstant.profileTypeId)) {
       Hive.registerAdapter(ProfileHiveModelAdapter());
     }
+    if (!Hive.isAdapterRegistered(HiveTableConstant.chatTypeId)) {
+      Hive.registerAdapter(ChatHiveModelAdapter());
+    }
+    if (!Hive.isAdapterRegistered(HiveTableConstant.conversationTypeId)) {
+      Hive.registerAdapter(ConversationHiveModelAdapter());
+    }
+    if (!Hive.isAdapterRegistered(HiveTableConstant.locationTypeId)) {
+      Hive.registerAdapter(LocationHiveModelAdapter());
+    }
   }
 
   // box open
@@ -119,12 +125,12 @@ class HiveService {
     );
     await Hive.openBox<CategoryHiveModel>(HiveTableConstant.categoryBoxName);
     await Hive.openBox<ProfileHiveModel>(HiveTableConstant.profileBoxName);
+    await Hive.openBox<ChatHiveModel>(HiveTableConstant.chatBoxName);
+    await Hive.openBox<ConversationHiveModel>(
+      HiveTableConstant.conversationBoxName,
+    );
+    await Hive.openBox<LocationHiveModel>(HiveTableConstant.locationBoxName);
     await Hive.openBox(HiveTableConstant.userBoxName);
-  }
-
-  // box close
-  Future<void> _close() async {
-    await Hive.close();
   }
 
   // ======================= Auth Queries =========================

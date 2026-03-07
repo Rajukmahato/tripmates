@@ -146,4 +146,73 @@ class AuthRepository implements IAuthRepository {
       return Left(LocalDatabaseFailure(message: e.toString()));
     }
   }
+
+  @override
+  Future<Either<Failure, bool>> forgotPassword(
+    String email, {
+    String? platform,
+  }) async {
+    if (await _networkInfo.isConnected) {
+      try {
+        final result = await _authRemoteDataSource.forgotPassword(
+          email,
+          platform: platform,
+        );
+        if (result) {
+          return const Right(true);
+        }
+        return const Left(ApiFailure(message: 'Failed to send reset email'));
+      } on DioException catch (e) {
+        return Left(
+          ApiFailure(
+            message:
+                e.response?.data['message'] ?? 'Failed to send reset email',
+            statusCode: e.response?.statusCode,
+          ),
+        );
+      } catch (e) {
+        return Left(ApiFailure(message: e.toString()));
+      }
+    }
+
+    return const Left(
+      NetworkFailure(
+        message: 'Internet connection required for password reset',
+      ),
+    );
+  }
+
+  @override
+  Future<Either<Failure, bool>> resetPassword(
+    String token,
+    String password,
+    String confirmPassword,
+  ) async {
+    if (await _networkInfo.isConnected) {
+      try {
+        final result = await _authRemoteDataSource.resetPassword(
+          token,
+          password,
+          confirmPassword,
+        );
+        if (result) {
+          return const Right(true);
+        }
+        return const Left(ApiFailure(message: 'Failed to reset password'));
+      } on DioException catch (e) {
+        return Left(
+          ApiFailure(
+            message: e.response?.data['message'] ?? 'Failed to reset password',
+            statusCode: e.response?.statusCode,
+          ),
+        );
+      } catch (e) {
+        return Left(ApiFailure(message: e.toString()));
+      }
+    }
+
+    return const Left(
+      NetworkFailure(message: 'Internet connection required to reset password'),
+    );
+  }
 }

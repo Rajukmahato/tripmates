@@ -1,17 +1,12 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tripmates/core/services/storage/user_session_service.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-// provider
-final tokenServiceProvider = Provider<TokenService>((ref) {
-  return TokenService(prefs: ref.read(sharedPreferencesProvider));
-});
 
 class TokenService {
   static const String _tokenKey = 'auth_token';
   final SharedPreferences _prefs;
+  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
-  TokenService({required SharedPreferences prefs}) : _prefs = prefs;
+  TokenService(SharedPreferences prefs) : _prefs = prefs;
 
   // Save token
   Future<void> saveToken(String token) async {
@@ -26,6 +21,7 @@ class TokenService {
   // Remove token (for logout)
   Future<void> removeToken() async {
     await _prefs.remove(_tokenKey);
+    // Also remove from FlutterSecureStorage
+    await _secureStorage.delete(key: _tokenKey);
   }
 }
-

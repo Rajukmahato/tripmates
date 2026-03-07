@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class StorageService {
   final SharedPreferences _prefs;
 
-  StorageService({required SharedPreferences prefs}) : _prefs = prefs;
+  StorageService(SharedPreferences prefs) : _prefs = prefs;
 
   // String
   Future<bool> setString(String key, String value) =>

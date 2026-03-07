@@ -43,6 +43,12 @@
 	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>TripMates uses your location to show your position to trip members while sharing is enabled.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>TripMates uses your location in the background so your trip group can see live updates during active trips.</string>
+	<key>GMSApiKey</key>
+	<string>YOUR_GOOGLE_MAPS_API_KEY</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 </dict>
