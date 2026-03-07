@@ -21,9 +21,7 @@ class ProfileRepository implements IProfileRepository {
   @override
   Future<Either<Failure, ProfileEntity>> getProfile(String userId) async {
     try {
-      final response = await _apiClient.get(
-        '${ApiEndpoints.userProfile}/$userId',
-      );
+      final response = await _apiClient.get(ApiEndpoints.userProfile(userId));
 
       if (response.data['success'] == true) {
         final data = response.data['data'] as Map<String, dynamic>;
@@ -67,7 +65,7 @@ class ProfileRepository implements IProfileRepository {
       });
 
       final response = await _apiClient.put(
-        '${ApiEndpoints.updateProfile}/${profile.userId}',
+        ApiEndpoints.updateUserProfile(profile.userId!),
         data: formData,
       );
 
@@ -94,8 +92,24 @@ class ProfileRepository implements IProfileRepository {
 
   @override
   Future<Either<Failure, bool>> deleteAccount(String userId) async {
-    // TODO: Implement when backend endpoint is available
-    return Left(ApiFailure(message: 'Not implemented yet'));
+    // Account deletion is not implemented in the backend yet for safety reasons.
+    // This feature requires:
+    // 1. Backend endpoint: DELETE /api/users/:userId
+    // 2. Proper authentication and authorization checks
+    // 3. Data cascade deletion or anonymization strategy
+    // 4. User confirmation flow in the UI
+    //
+    // When implementing, ensure:
+    // - User must be authenticated and can only delete their own account
+    // - All user data (trips, reviews, messages) must be handled appropriately
+    // - Consider GDPR compliance for data deletion
+    return const Left(
+      ApiFailure(
+        message:
+            'Account deletion is not available at this time. '
+            'Please contact support for assistance.',
+      ),
+    );
   }
 
   @override
