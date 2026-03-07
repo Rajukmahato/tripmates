@@ -2,10 +2,13 @@ import 'dart:io';
 import 'package:dartz/dartz.dart';
 import 'package:tripmates/core/error/failures.dart';
 import 'package:tripmates/features/trip/domain/entities/trip_entity.dart';
+import 'package:tripmates/features/trip/domain/entities/itinerary_item_entity.dart';
+import 'package:tripmates/features/trip/domain/entities/checklist_item_entity.dart';
 
 abstract interface class ITripRepository {
   Future<Either<Failure, List<TripEntity>>> getAllTrips();
   Future<Either<Failure, List<TripEntity>>> getTripsByUser(String userId);
+  Future<Either<Failure, List<TripEntity>>> getJoinedTrips(String userId);
   Future<Either<Failure, List<TripEntity>>> getPlannedTrips();
   Future<Either<Failure, List<TripEntity>>> getCompletedTrips();
   Future<Either<Failure, List<TripEntity>>> getTripsByCategory(
@@ -17,4 +20,27 @@ abstract interface class ITripRepository {
   Future<Either<Failure, bool>> deleteTrip(String tripId);
   Future<Either<Failure, String>> uploadPhoto(File photo);
   Future<Either<Failure, String>> uploadVideo(File video);
+  Future<Either<Failure, bool>> sendJoinRequest({
+    required String tripId,
+    required String userId,
+    String? message,
+  });
+
+  // Itinerary methods
+  Future<Either<Failure, List<ItineraryItemEntity>>> getItinerary(
+    String tripId,
+  );
+  Future<Either<Failure, bool>> updateItinerary({
+    required String tripId,
+    required List<Map<String, dynamic>> itinerary,
+  });
+
+  // Checklist methods
+  Future<Either<Failure, List<ChecklistItemEntity>>> getChecklist(
+    String tripId,
+  );
+  Future<Either<Failure, bool>> updateChecklist({
+    required String tripId,
+    required List<Map<String, dynamic>> checklist,
+  });
 }
