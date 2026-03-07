@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tripmates/app/theme/app_colors.dart';
 import 'package:tripmates/app/theme/theme_extensions.dart';
-import 'package:tripmates/core/services/storage/user_session_service.dart';
+import 'package:tripmates/core/providers/app_providers.dart';
 import 'package:tripmates/features/trip/domain/entities/trip_entity.dart';
 import 'package:tripmates/features/trip/presentation/pages/trip_detail_page.dart';
 import 'package:tripmates/features/trip/presentation/state/trip_state.dart';
+import 'package:tripmates/features/trip/presentation/utils/user_trip_logic.dart';
 import 'package:tripmates/features/trip/presentation/view_model/trip_viewmodel.dart';
 import 'package:tripmates/features/category/presentation/view_model/category_viewmodel.dart';
 
@@ -25,11 +26,7 @@ class _MyTripsPageState extends ConsumerState<MyTripsPage> {
   }
 
   void _loadMyTrips() {
-    final userSessionService = ref.read(userSessionServiceProvider);
-    final userId = userSessionService.getCurrentUserId();
-    if (userId != null) {
-      ref.read(tripViewModelProvider.notifier).getMyTrips(userId);
-    }
+    ref.read(tripViewModelProvider.notifier).getAllTrips();
     ref.read(categoryViewModelProvider.notifier).getAllCategories();
   }
 
@@ -49,6 +46,13 @@ class _MyTripsPageState extends ConsumerState<MyTripsPage> {
   Widget build(BuildContext context) {
     final tripState = ref.watch(tripViewModelProvider);
     final userSessionService = ref.watch(userSessionServiceProvider);
+    final currentUserId = userSessionService.getCurrentUserId() ?? '';
+    final myTripsSections = getMyTripsSections(tripState.trips, currentUserId);
+    final myTrips = [
+      ...myTripsSections.planned,
+      ...myTripsSections.ongoing,
+      ...myTripsSections.completed,
+    ];
     final userName = userSessionService.getCurrentUserFullName() ?? 'User';
 
     return Scaffold(
@@ -86,7 +90,7 @@ class _MyTripsPageState extends ConsumerState<MyTripsPage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '${tripState.trips.length} trips',
+                          '${myTrips.length} trips',
                           style: const TextStyle(
                             fontSize: 14,
                             color: Colors.white70,
@@ -111,9 +115,8 @@ class _MyTripsPageState extends ConsumerState<MyTripsPage> {
                     child: _StatCard(
                       icon: Icons.pending_actions_rounded,
                       title: 'Planned',
-                      value:
-                          '${tripState.trips.where((t) => t.status == TripStatus.planned).length}',
-                      gradient: AppColors.primaryGradient,
+                      value: '${myTripsSections.planned.length}',
+                      color: const Color(0xFF7C6BF7),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -121,9 +124,8 @@ class _MyTripsPageState extends ConsumerState<MyTripsPage> {
                     child: _StatCard(
                       icon: Icons.flight_takeoff_rounded,
                       title: 'Ongoing',
-                      value:
-                          '${tripState.trips.where((t) => t.status == TripStatus.ongoing).length}',
-                      gradient: AppColors.lostGradient,
+                      value: '${myTripsSections.ongoing.length}',
+                      color: const Color(0xFFFF6B6B),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -131,9 +133,8 @@ class _MyTripsPageState extends ConsumerState<MyTripsPage> {
                     child: _StatCard(
                       icon: Icons.check_circle_rounded,
                       title: 'Done',
-                      value:
-                          '${tripState.trips.where((t) => t.status == TripStatus.completed).length}',
-                      gradient: AppColors.foundGradient,
+                      value: '${myTripsSections.completed.length}',
+                      color: const Color(0xFF4ECDC4),
                     ),
                   ),
                 ],
@@ -151,7 +152,7 @@ class _MyTripsPageState extends ConsumerState<MyTripsPage> {
                     ),
                   ),
                 )
-              : tripState.trips.isEmpty
+              : myTrips.isEmpty
               ? SliverToBoxAdapter(
                   child: Center(
                     child: Padding(
@@ -189,7 +190,7 @@ class _MyTripsPageState extends ConsumerState<MyTripsPage> {
                   padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
-                      final trip = tripState.trips[index];
+                      final trip = myTrips[index];
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 16.0),
                         child: _TripCard(
@@ -203,7 +204,9 @@ class _MyTripsPageState extends ConsumerState<MyTripsPage> {
                                   title: trip.tripName,
                                   location: trip.destination,
                                   category: _getCategoryName(trip.category),
-                                  isLost: trip.status == TripStatus.planned,
+                                  isLost:
+                                      getUserTripPhase(trip) ==
+                                      UserTripPhase.planned,
                                   description:
                                       trip.description ??
                                       'No description provided.',
@@ -215,7 +218,7 @@ class _MyTripsPageState extends ConsumerState<MyTripsPage> {
                           },
                         ),
                       );
-                    }, childCount: tripState.trips.length),
+                    }, childCount: myTrips.length),
                   ),
                 ),
         ],
@@ -228,13 +231,13 @@ class _StatCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final String value;
-  final Gradient gradient;
+  final Color color;
 
   const _StatCard({
     required this.icon,
     required this.title,
     required this.value,
-    required this.gradient,
+    required this.color,
   });
 
   @override
@@ -242,9 +245,15 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: gradient,
+        color: color,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: context.softShadow,
+        boxShadow: [
+          BoxShadow(
+            color: color.withAlpha(77),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -280,23 +289,23 @@ class _TripCard extends StatelessWidget {
   });
 
   Color _getStatusColor() {
-    switch (trip.status) {
-      case TripStatus.planned:
+    switch (getUserTripPhase(trip)) {
+      case UserTripPhase.planned:
         return AppColors.primary;
-      case TripStatus.ongoing:
+      case UserTripPhase.ongoing:
         return Colors.orange;
-      case TripStatus.completed:
+      case UserTripPhase.done:
         return Colors.green;
     }
   }
 
   String _getStatusLabel() {
-    switch (trip.status) {
-      case TripStatus.planned:
+    switch (getUserTripPhase(trip)) {
+      case UserTripPhase.planned:
         return 'Planned';
-      case TripStatus.ongoing:
+      case UserTripPhase.ongoing:
         return 'Ongoing';
-      case TripStatus.completed:
+      case UserTripPhase.done:
         return 'Completed';
     }
   }
@@ -314,39 +323,67 @@ class _TripCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
-              ),
-              child: trip.media != null && trip.media!.isNotEmpty
-                  ? (trip.media!.startsWith('http')
-                        ? Image.network(
-                            trip.media!,
-                            height: 160,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          )
-                        : Image.file(
-                            File(trip.media!),
-                            height: 160,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          ))
-                  : Container(
-                      height: 160,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        gradient: AppColors.primaryGradient,
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.luggage_rounded,
-                          size: 60,
-                          color: Colors.white,
+            // Image with Status Badge
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
+                  child: trip.media != null && trip.media!.isNotEmpty
+                      ? (trip.media!.startsWith('http')
+                            ? Image.network(
+                                trip.media!,
+                                height: 180,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              )
+                            : Image.file(
+                                File(trip.media!),
+                                height: 180,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                              ))
+                      : Container(
+                          height: 180,
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            gradient: AppColors.primaryGradient,
+                          ),
+                          child: const Center(
+                            child: Icon(
+                              Icons.luggage_rounded,
+                              size: 60,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
+                ),
+                // Status Badge Overlay
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: context.surfaceColor,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: context.softShadow,
+                    ),
+                    child: Text(
+                      _getStatusLabel(),
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: _getStatusColor(),
                       ),
                     ),
+                  ),
+                ),
+              ],
             ),
 
             Padding(
@@ -354,39 +391,15 @@ class _TripCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          trip.tripName,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: context.textPrimary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _getStatusColor().withAlpha(51),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          _getStatusLabel(),
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: _getStatusColor(),
-                          ),
-                        ),
-                      ),
-                    ],
+                  Text(
+                    trip.tripName,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: context.textPrimary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 8),
                   Row(
