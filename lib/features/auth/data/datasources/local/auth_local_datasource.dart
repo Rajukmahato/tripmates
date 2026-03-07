@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tripmates/core/providers/app_providers.dart';
 import 'package:tripmates/core/services/hive/hive_service.dart';
+import 'package:tripmates/core/services/storage/token_service.dart';
 import 'package:tripmates/core/services/storage/user_session_service.dart';
 import 'package:tripmates/features/auth/data/datasources/auth_datasource.dart';
 import 'package:tripmates/features/auth/data/models/auth_hive_model.dart';
@@ -8,21 +10,26 @@ import 'package:tripmates/features/auth/data/models/auth_hive_model.dart';
 final authLocalDatasourceProvider = Provider<AuthLocalDatasource>((ref) {
   final hiveService = ref.read(hiveServiceProvider);
   final userSessionService = ref.read(userSessionServiceProvider);
+  final tokenService = ref.read(tokenServiceProvider);
   return AuthLocalDatasource(
     hiveService: hiveService,
     userSessionService: userSessionService,
+    tokenService: tokenService,
   );
 });
 
 class AuthLocalDatasource implements IAuthLocalDataSource {
   final HiveService _hiveService;
   final UserSessionService _userSessionService;
+  final TokenService _tokenService;
 
   AuthLocalDatasource({
     required HiveService hiveService,
     required UserSessionService userSessionService,
+    required TokenService tokenService,
   }) : _hiveService = hiveService,
-       _userSessionService = userSessionService;
+       _userSessionService = userSessionService,
+       _tokenService = tokenService;
 
   @override
   Future<AuthHiveModel> register(AuthHiveModel user) async {
@@ -34,7 +41,7 @@ class AuthLocalDatasource implements IAuthLocalDataSource {
     try {
       final user = _hiveService.login(email, password);
       if (user != null && user.authId != null) {
-        // Save user session to SharedPreferences 
+        // Save user session to SharedPreferences
         await _userSessionService.saveUserSession(
           userId: user.authId!,
           email: user.email,
@@ -75,7 +82,10 @@ class AuthLocalDatasource implements IAuthLocalDataSource {
   @override
   Future<bool> logout() async {
     try {
+      // Clear user session from SharedPreferences
       await _userSessionService.clearSession();
+      // Clear token from both SharedPreferences and FlutterSecureStorage
+      await _tokenService.removeToken();
       return true;
     } catch (e) {
       return false;
