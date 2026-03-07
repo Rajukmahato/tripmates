@@ -8,6 +8,14 @@ String? _resolveMedia(String? media) {
   return '${ApiEndpoints.baseOrigin}/$cleaned';
 }
 
+int? _parseIntValue(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is String) return int.tryParse(value);
+  if (value is double) return value.toInt();
+  return null;
+}
+
 class ProfileApiModel {
   final String? id;
   final String fullName;
@@ -47,15 +55,18 @@ class ProfileApiModel {
 
   factory ProfileApiModel.fromJson(Map<String, dynamic> json) {
     return ProfileApiModel(
-      id: json['_id'] as String?,
+      id: json['userId'] as String? ?? json['_id'] as String?,
       fullName: (json['fullName'] as String?) ?? '',
       email: json['email'] as String,
       phone: (json['phoneNumber'] as String?) ?? '',
-      profilePicture: _resolveMedia(json['profileImagePath'] as String?),
+      profilePicture: _resolveMedia(
+        (json['profilePicture'] as String?) ??
+            (json['profileImagePath'] as String?),
+      ),
       bio: (json['bio'] as String?) ?? '',
       location: (json['location'] as String?) ?? '',
-      totalTrips: json['totalTrips'] as int? ?? 0,
-      completedTrips: json['completedTrips'] as int? ?? 0,
+      totalTrips: _parseIntValue(json['totalTrips']) ?? 0,
+      completedTrips: _parseIntValue(json['completedTrips']) ?? 0,
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'] as String)
           : null,
