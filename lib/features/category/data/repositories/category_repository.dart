@@ -1,5 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tripmates/core/error/exceptions.dart';
 import 'package:tripmates/core/error/failures.dart';
 import 'package:tripmates/features/category/data/datasources/category_datasource.dart';
 import 'package:tripmates/features/category/data/datasources/local/category_local_datasource.dart';
@@ -66,9 +67,45 @@ class CategoryRepository implements ICategoryRepository {
     try {
       final models = await _categoryRemoteDataSource.getAllCategories();
       final entities = CategoryApiModel.toEntityList(models);
+
+      // Cache categories locally for offline access
+      try {
+        for (final entity in entities) {
+          await _categoryLocalDataSource.createCategory(
+            CategoryHiveModel.fromEntity(entity),
+          );
+        }
+      } catch (_) {
+        // Silently fail on cache update, don't affect the main flow
+      }
+
       return Right(entities);
+    } on ServerException catch (e) {
+      // Try to load from local cache if remote fails
+      try {
+        final localModels = await _categoryLocalDataSource.getAllCategories();
+        if (localModels.isNotEmpty) {
+          final entities = localModels.map((m) => m.toEntity()).toList();
+          return Right(entities);
+        }
+      } catch (_) {
+        // Local cache also failed
+      }
+      return Left(ApiFailure(message: e.message));
     } catch (e) {
-      return Left(ApiFailure(message: e.toString()));
+      // Try to load from local cache for any other error
+      try {
+        final localModels = await _categoryLocalDataSource.getAllCategories();
+        if (localModels.isNotEmpty) {
+          final entities = localModels.map((m) => m.toEntity()).toList();
+          return Right(entities);
+        }
+      } catch (_) {
+        // Local cache also failed
+      }
+      return Left(
+        ApiFailure(message: 'Failed to load categories: ${e.toString()}'),
+      );
     }
   }
 
