@@ -17,8 +17,15 @@ abstract interface class IAuthRemoteDataSource {
   Future<AuthApiModel?> login(String email, String password);
   Future<AuthApiModel?> getUserById(String authId);
   Future<bool> forgotPassword(String email, {String? platform});
+  Future<bool> verifyOTP(String email, String otp);
   Future<bool> resetPassword(
     String token,
+    String password,
+    String confirmPassword,
+  );
+  Future<bool> resetPasswordWithOTP(
+    String email,
+    String otp,
     String password,
     String confirmPassword,
   );

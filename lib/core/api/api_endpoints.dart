@@ -62,7 +62,9 @@ class ApiEndpoints {
   static const String authLogin = '/auth/login';
   static const String authRegister = '/auth/register';
   static const String authForgotPassword = '/auth/forgot-password';
+  static const String authVerifyOTP = '/auth/verify-otp';
   static const String authResetPassword = '/auth/reset-password';
+  static const String authResetPasswordOTP = '/auth/reset-password-otp';
   static String authUpdateProfile(String userId) => '/auth/$userId';
 
   // ============ User Profile Endpoints (/api/user) ============

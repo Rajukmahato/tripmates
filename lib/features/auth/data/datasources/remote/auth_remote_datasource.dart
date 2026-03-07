@@ -159,4 +159,55 @@ class AuthRemoteDatasource implements IAuthRemoteDataSource {
       return false;
     }
   }
+
+  @override
+  Future<bool> verifyOTP(String email, String otp) async {
+    try {
+      print('🔐 [AuthRemoteDatasource] verifyOTP called');
+      print('   Email: $email');
+      print('   OTP: $otp');
+
+      final response = await _apiClient.post(
+        ApiEndpoints.authVerifyOTP,
+        data: {'email': email, 'otp': otp},
+      );
+
+      print('✅ [AuthRemoteDatasource] Verify OTP Response: ${response.data}');
+      return response.data['success'] == true;
+    } catch (e) {
+      print('❌ [AuthRemoteDatasource] Verify OTP Exception: $e');
+      return false;
+    }
+  }
+
+  @override
+  Future<bool> resetPasswordWithOTP(
+    String email,
+    String otp,
+    String password,
+    String confirmPassword,
+  ) async {
+    try {
+      print('🔐 [AuthRemoteDatasource] resetPasswordWithOTP called');
+      print('   Email: $email');
+
+      final response = await _apiClient.post(
+        ApiEndpoints.authResetPasswordOTP,
+        data: {
+          'email': email,
+          'otp': otp,
+          'password': password,
+          'confirmPassword': confirmPassword,
+        },
+      );
+
+      print(
+        '✅ [AuthRemoteDatasource] Reset Password with OTP Response: ${response.data}',
+      );
+      return response.data['success'] == true;
+    } catch (e) {
+      print('❌ [AuthRemoteDatasource] Reset Password with OTP Exception: $e');
+      return false;
+    }
+  }
 }

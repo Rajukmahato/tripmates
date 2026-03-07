@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tripmates/core/utils/platform_util.dart';
+import 'package:tripmates/features/auth/presentation/pages/otp_verification_page.dart';
 import 'package:tripmates/features/auth/presentation/view_model/auth_viewmodel.dart';
 
 class ForgotPasswordPage extends ConsumerStatefulWidget {
@@ -35,15 +37,35 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
       setState(() => _isLoading = false);
 
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Password reset email sent! Please check your inbox.',
+        final isMobile = PlatformUtil.isAndroid || PlatformUtil.isIOS;
+
+        if (isMobile) {
+          // For mobile, navigate to OTP verification page
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  OTPVerificationPage(email: _emailController.text.trim()),
             ),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pop(context);
+          );
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('OTP sent to your email! Please check your inbox.'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          // For web, show reset link sent message
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Password reset email sent! Please check your inbox.',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+          Navigator.pop(context);
+        }
       } else {
         final errorMessage = ref.read(authViewModelProvider).errorMessage;
         ScaffoldMessenger.of(context).showSnackBar(

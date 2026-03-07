@@ -215,4 +215,66 @@ class AuthRepository implements IAuthRepository {
       NetworkFailure(message: 'Internet connection required to reset password'),
     );
   }
+
+  @override
+  Future<Either<Failure, bool>> verifyOTP(String email, String otp) async {
+    if (await _networkInfo.isConnected) {
+      try {
+        final result = await _authRemoteDataSource.verifyOTP(email, otp);
+        if (result) {
+          return const Right(true);
+        }
+        return const Left(ApiFailure(message: 'Invalid or expired OTP'));
+      } on DioException catch (e) {
+        return Left(
+          ApiFailure(
+            message: e.response?.data['message'] ?? 'Invalid or expired OTP',
+            statusCode: e.response?.statusCode,
+          ),
+        );
+      } catch (e) {
+        return Left(ApiFailure(message: e.toString()));
+      }
+    }
+
+    return const Left(
+      NetworkFailure(message: 'Internet connection required to verify OTP'),
+    );
+  }
+
+  @override
+  Future<Either<Failure, bool>> resetPasswordWithOTP(
+    String email,
+    String otp,
+    String password,
+    String confirmPassword,
+  ) async {
+    if (await _networkInfo.isConnected) {
+      try {
+        final result = await _authRemoteDataSource.resetPasswordWithOTP(
+          email,
+          otp,
+          password,
+          confirmPassword,
+        );
+        if (result) {
+          return const Right(true);
+        }
+        return const Left(ApiFailure(message: 'Failed to reset password'));
+      } on DioException catch (e) {
+        return Left(
+          ApiFailure(
+            message: e.response?.data['message'] ?? 'Failed to reset password',
+            statusCode: e.response?.statusCode,
+          ),
+        );
+      } catch (e) {
+        return Left(ApiFailure(message: e.toString()));
+      }
+    }
+
+    return const Left(
+      NetworkFailure(message: 'Internet connection required to reset password'),
+    );
+  }
 }
