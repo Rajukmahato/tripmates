@@ -322,7 +322,7 @@ class _MultiSectionTripFormState extends ConsumerState<MultiSectionTripForm> {
                         // Budget
                         TextFormField(
                           decoration: const InputDecoration(
-                            labelText: 'Budget (USD)',
+                            labelText: 'Budget (NPR)',
                             border: OutlineInputBorder(),
                           ),
                           keyboardType: TextInputType.number,

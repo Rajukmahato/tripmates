@@ -258,7 +258,9 @@ class _AddTripPageState extends ConsumerState<AddTripPage> {
     print('🔵 [AddTripPage] Create Trip button clicked');
     print('   User ID: $userId');
     print('   Trip Name: ${_tripNameController.text.trim()}');
-    print('   Destination: ${_selectedDestination?.displayName ?? _destinationController.text.trim()}');
+    print(
+      '   Destination: ${_selectedDestination?.displayName ?? _destinationController.text.trim()}',
+    );
 
     ref
         .read(tripViewModelProvider.notifier)
@@ -333,7 +335,9 @@ class _AddTripPageState extends ConsumerState<AddTripPage> {
     final categoryState = ref.watch(categoryViewModelProvider);
 
     ref.listen<TripState>(tripViewModelProvider, (previous, next) {
-      print('🔵 [AddTripPage] State changed from ${previous?.status} to ${next.status}');
+      print(
+        '🔵 [AddTripPage] State changed from ${previous?.status} to ${next.status}',
+      );
       if (next.status == TripStateStatus.created) {
         print('✅ [AddTripPage] Trip created - showing success snackbar');
         ScaffoldMessenger.of(context).showSnackBar(
@@ -608,6 +612,57 @@ class _AddTripPageState extends ConsumerState<AddTripPage> {
                                     : null,
                                 child: ListTile(
                                   dense: true,
+                                  leading: dest.primaryImage != null
+                                      ? ClipRRect(
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                          child: Image.network(
+                                            dest.primaryImage!,
+                                            width: 50,
+                                            height: 50,
+                                            fit: BoxFit.cover,
+                                            errorBuilder:
+                                                (
+                                                  context,
+                                                  error,
+                                                  stackTrace,
+                                                ) => Container(
+                                                  width: 50,
+                                                  height: 50,
+                                                  decoration: BoxDecoration(
+                                                    color: AppColors.primary
+                                                        .withValues(alpha: 0.1),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          8,
+                                                        ),
+                                                  ),
+                                                  child: Icon(
+                                                    Icons.place_rounded,
+                                                    color: AppColors.primary,
+                                                    size: 24,
+                                                  ),
+                                                ),
+                                          ),
+                                        )
+                                      : Container(
+                                          width: 50,
+                                          height: 50,
+                                          decoration: BoxDecoration(
+                                            color: AppColors.primary.withValues(
+                                              alpha: 0.1,
+                                            ),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                          child: Icon(
+                                            Icons.place_rounded,
+                                            color: AppColors.primary,
+                                            size: 24,
+                                          ),
+                                        ),
                                   title: Text(
                                     dest.name,
                                     style: TextStyle(

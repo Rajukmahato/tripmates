@@ -662,9 +662,9 @@ class _ItemCard extends StatelessWidget {
   String _formatPrice(double? amount) {
     if (amount == null) return 'N/A';
     if (amount == amount.roundToDouble()) {
-      return '\$${amount.toInt()}';
+      return 'NPR ${amount.toInt()}';
     }
-    return '\$${amount.toStringAsFixed(2)}';
+    return 'NPR ${amount.toStringAsFixed(2)}';
   }
 
   IconData _getCategoryIcon(String category) {
@@ -908,6 +908,20 @@ class _DestinationCard extends StatelessWidget {
                     return Container(
                       decoration: BoxDecoration(
                         gradient: AppColors.primaryGradient,
+                      ),
+                    );
+                  },
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      color: Colors.grey[200],
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded /
+                                    loadingProgress.expectedTotalBytes!
+                              : null,
+                        ),
                       ),
                     );
                   },

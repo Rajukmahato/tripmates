@@ -724,7 +724,7 @@ class _EnhancedTripDetailPageState extends ConsumerState<EnhancedTripDetailPage>
                 _buildDetailRow(
                   'Budget',
                   trip.budget != null
-                      ? '\$${trip.budget!.toStringAsFixed(0)}'
+                      ? 'NPR ${trip.budget!.toStringAsFixed(0)}'
                       : 'Not specified',
                 ),
                 const Divider(height: 24),

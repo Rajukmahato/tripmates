@@ -166,6 +166,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
             const SizedBox(height: 20),
             Text(
+              "TripMates",
+              style: TextStyle(
+                fontFamily: "OpenSans Regular",
+                color: Colors.white,
+                fontSize: fontSize,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
               "Your Traveling Partner",
               style: TextStyle(
                 fontFamily: "OpenSans Italic",

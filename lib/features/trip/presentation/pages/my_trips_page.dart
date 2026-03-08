@@ -337,12 +337,64 @@ class _TripCard extends StatelessWidget {
                                 height: 180,
                                 width: double.infinity,
                                 fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(
+                                      height: 180,
+                                      width: double.infinity,
+                                      decoration: BoxDecoration(
+                                        gradient: AppColors.primaryGradient,
+                                      ),
+                                      child: const Center(
+                                        child: Icon(
+                                          Icons.image_not_supported_rounded,
+                                          size: 60,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                loadingBuilder:
+                                    (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return Container(
+                                        height: 180,
+                                        width: double.infinity,
+                                        color: Colors.grey[200],
+                                        child: Center(
+                                          child: CircularProgressIndicator(
+                                            value:
+                                                loadingProgress
+                                                        .expectedTotalBytes !=
+                                                    null
+                                                ? loadingProgress
+                                                          .cumulativeBytesLoaded /
+                                                      loadingProgress
+                                                          .expectedTotalBytes!
+                                                : null,
+                                          ),
+                                        ),
+                                      );
+                                    },
                               )
                             : Image.file(
                                 File(trip.media!),
                                 height: 180,
                                 width: double.infinity,
                                 fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(
+                                      height: 180,
+                                      width: double.infinity,
+                                      decoration: BoxDecoration(
+                                        gradient: AppColors.primaryGradient,
+                                      ),
+                                      child: const Center(
+                                        child: Icon(
+                                          Icons.broken_image_rounded,
+                                          size: 60,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
                               ))
                       : Container(
                           height: 180,

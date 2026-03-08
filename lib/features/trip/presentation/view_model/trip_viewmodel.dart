@@ -67,7 +67,7 @@ class TripViewModel extends Notifier<TripState> {
         log('getAllTrips: Success! Got ${trips.length} trips');
         if (trips.isNotEmpty) {
           log(
-            'Sample trip: ${trips[0].tripName} - \$${trips[0].budget}, ${trips[0].groupSizeMax} members, ${trips[0].averageRating}★',
+            'Sample trip: ${trips[0].tripName} - NPR ${trips[0].budget}, ${trips[0].groupSizeMax} members, ${trips[0].averageRating}★',
           );
         }
         state = state.copyWith(status: TripStateStatus.loaded, trips: trips);
