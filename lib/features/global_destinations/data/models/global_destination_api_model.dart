@@ -1,5 +1,26 @@
 import 'package:equatable/equatable.dart';
+import 'package:tripmates/core/api/api_endpoints.dart';
 import 'package:tripmates/features/global_destinations/domain/entities/global_destination_entity.dart';
+
+/// Helper function to resolve media URLs
+String? _resolveMediaUrl(String? mediaPath) {
+  if (mediaPath == null || mediaPath.isEmpty) return null;
+  if (mediaPath.startsWith('http')) return mediaPath; // Already full URL
+  final cleaned = mediaPath.startsWith('/')
+      ? mediaPath.substring(1)
+      : mediaPath;
+  return '${ApiEndpoints.baseOrigin}/$cleaned';
+}
+
+/// Helper function to resolve list of media URLs
+List<String>? _resolveMediaList(List<String>? mediaList) {
+  if (mediaList == null || mediaList.isEmpty) return null;
+  return mediaList
+      .map((path) => _resolveMediaUrl(path))
+      .where((url) => url != null)
+      .cast<String>()
+      .toList();
+}
 
 /// API model for global destination data transfer
 class GlobalDestinationApiModel extends Equatable {
@@ -58,9 +79,9 @@ class GlobalDestinationApiModel extends Equatable {
           ? List<String>.from(json['attractions'] as List)
           : null,
       images: json['images'] != null
-          ? List<String>.from(json['images'] as List)
+          ? _resolveMediaList(List<String>.from(json['images'] as List))
           : null,
-      coverImage: json['coverImage'] as String?,
+      coverImage: _resolveMediaUrl(json['coverImage'] as String?),
       travelTips: json['travelTips'] != null
           ? List<String>.from(json['travelTips'] as List)
           : null,

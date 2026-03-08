@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tripmates/core/utils/platform_util.dart';
+import 'package:tripmates/features/auth/data/repositories/auth_repository.dart';
 import 'package:tripmates/features/auth/domain/usecases/forgot_password_usecase.dart';
 import 'package:tripmates/features/auth/domain/usecases/get_current_user_usecase.dart';
 import 'package:tripmates/features/auth/domain/usecases/login_usecase.dart';
@@ -152,6 +153,60 @@ class AuthViewModel extends Notifier<AuthState> {
         password: password,
         confirmPassword: confirmPassword,
       ),
+    );
+
+    return result.fold(
+      (failure) {
+        state = state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: failure.message,
+        );
+        return false;
+      },
+      (success) {
+        state = state.copyWith(status: AuthStatus.initial, clearError: true);
+        return success;
+      },
+    );
+  }
+
+  Future<bool> verifyOTP({required String email, required String otp}) async {
+    state = state.copyWith(status: AuthStatus.loading, clearError: true);
+
+    // Call repository directly since we don't have a usecase
+    final authRepository = ref.read(authRepositoryProvider);
+    final result = await authRepository.verifyOTP(email, otp);
+
+    return result.fold(
+      (failure) {
+        state = state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: failure.message,
+        );
+        return false;
+      },
+      (success) {
+        state = state.copyWith(status: AuthStatus.initial, clearError: true);
+        return success;
+      },
+    );
+  }
+
+  Future<bool> resetPasswordWithOTP({
+    required String email,
+    required String otp,
+    required String password,
+    required String confirmPassword,
+  }) async {
+    state = state.copyWith(status: AuthStatus.loading, clearError: true);
+
+    // Call repository directly since we don't have a usecase
+    final authRepository = ref.read(authRepositoryProvider);
+    final result = await authRepository.resetPasswordWithOTP(
+      email,
+      otp,
+      password,
+      confirmPassword,
     );
 
     return result.fold(

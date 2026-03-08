@@ -27,6 +27,11 @@ class GlobalDestinationRepository implements IGlobalDestinationRepository {
   final IGlobalDestinationRemoteDataSource _remoteDataSource;
   final network.NetworkInfo _networkInfo;
 
+  // In-memory cache for offline browsing during app session
+  List<GlobalDestinationEntity>? _allDestinationsCache;
+  final Map<String, List<GlobalDestinationEntity>> _searchCache = {};
+  final Map<String, GlobalDestinationEntity> _destinationByIdCache = {};
+
   GlobalDestinationRepository({
     required IGlobalDestinationRemoteDataSource remoteDataSource,
     required network.NetworkInfo networkInfo,
@@ -37,19 +42,42 @@ class GlobalDestinationRepository implements IGlobalDestinationRepository {
   Future<Either<Failure, List<GlobalDestinationEntity>>> getAllDestinations({
     bool includeInactive = false,
   }) async {
-    if (await _networkInfo.isConnected) {
+    final isConnected = await _networkInfo.isConnected;
+
+    if (isConnected) {
       try {
         final destinations = await _remoteDataSource.getAllDestinations(
           includeInactive: includeInactive,
         );
-        return Right(destinations.map((model) => model.toEntity()).toList());
+        final entities = destinations.map((model) => model.toEntity()).toList();
+
+        // Cache for offline access
+        _allDestinationsCache = entities;
+
+        return Right(entities);
       } on ServerException catch (e) {
+        // Fallback to cache if available
+        if (_allDestinationsCache != null) {
+          return Right(_allDestinationsCache!);
+        }
         return Left(ApiFailure(message: e.message));
       } catch (e) {
+        // Fallback to cache if available
+        if (_allDestinationsCache != null) {
+          return Right(_allDestinationsCache!);
+        }
         return Left(ApiFailure(message: e.toString()));
       }
     } else {
-      return const Left(NetworkFailure(message: 'No internet connection'));
+      // Offline: use cache if available
+      if (_allDestinationsCache != null) {
+        return Right(_allDestinationsCache!);
+      }
+      return const Left(
+        NetworkFailure(
+          message: 'No internet connection and no cached destinations',
+        ),
+      );
     }
   }
 
@@ -58,20 +86,44 @@ class GlobalDestinationRepository implements IGlobalDestinationRepository {
     required String query,
     bool includeInactive = false,
   }) async {
-    if (await _networkInfo.isConnected) {
+    final isConnected = await _networkInfo.isConnected;
+    final cacheKey = '${query}_$includeInactive';
+
+    if (isConnected) {
       try {
         final destinations = await _remoteDataSource.searchDestinations(
           query: query,
           includeInactive: includeInactive,
         );
-        return Right(destinations.map((model) => model.toEntity()).toList());
+        final entities = destinations.map((model) => model.toEntity()).toList();
+
+        // Cache search results
+        _searchCache[cacheKey] = entities;
+
+        return Right(entities);
       } on ServerException catch (e) {
+        // Fallback to cached search results
+        if (_searchCache.containsKey(cacheKey)) {
+          return Right(_searchCache[cacheKey]!);
+        }
         return Left(ApiFailure(message: e.message));
       } catch (e) {
+        // Fallback to cached search results
+        if (_searchCache.containsKey(cacheKey)) {
+          return Right(_searchCache[cacheKey]!);
+        }
         return Left(ApiFailure(message: e.toString()));
       }
     } else {
-      return const Left(NetworkFailure(message: 'No internet connection'));
+      // Offline: use cached search results if available
+      if (_searchCache.containsKey(cacheKey)) {
+        return Right(_searchCache[cacheKey]!);
+      }
+      return const Left(
+        NetworkFailure(
+          message: 'No internet connection and no cached search results',
+        ),
+      );
     }
   }
 
@@ -79,17 +131,40 @@ class GlobalDestinationRepository implements IGlobalDestinationRepository {
   Future<Either<Failure, GlobalDestinationEntity>> getDestinationById(
     String id,
   ) async {
-    if (await _networkInfo.isConnected) {
+    final isConnected = await _networkInfo.isConnected;
+
+    if (isConnected) {
       try {
         final destination = await _remoteDataSource.getDestinationById(id);
-        return Right(destination.toEntity());
+        final entity = destination.toEntity();
+
+        // Cache individual destination
+        _destinationByIdCache[id] = entity;
+
+        return Right(entity);
       } on ServerException catch (e) {
+        // Fallback to cached destination
+        if (_destinationByIdCache.containsKey(id)) {
+          return Right(_destinationByIdCache[id]!);
+        }
         return Left(ApiFailure(message: e.message));
       } catch (e) {
+        // Fallback to cached destination
+        if (_destinationByIdCache.containsKey(id)) {
+          return Right(_destinationByIdCache[id]!);
+        }
         return Left(ApiFailure(message: e.toString()));
       }
     } else {
-      return const Left(NetworkFailure(message: 'No internet connection'));
+      // Offline: use cached destination if available
+      if (_destinationByIdCache.containsKey(id)) {
+        return Right(_destinationByIdCache[id]!);
+      }
+      return const Left(
+        NetworkFailure(
+          message: 'No internet connection and destination not cached',
+        ),
+      );
     }
   }
 

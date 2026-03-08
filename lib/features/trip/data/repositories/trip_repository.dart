@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tripmates/core/error/exceptions.dart';
 import 'package:tripmates/core/error/failures.dart';
 import 'package:tripmates/core/providers/app_providers.dart';
+import 'package:tripmates/core/services/connectivity/network_info.dart'
+    show NetworkInfo;
+import 'package:tripmates/core/services/offline/offline_operations_queue.dart';
 import 'package:tripmates/core/services/time/server_time_service.dart';
 import 'package:tripmates/features/trip/data/datasources/local/trip_local_datasource.dart';
 import 'package:tripmates/features/trip/data/datasources/remote/trip_remote_datasource.dart';
@@ -19,10 +22,15 @@ final tripRepositoryProvider = Provider<ITripRepository>((ref) {
   final tripLocalDatasource = ref.read(tripLocalDatasourceProvider);
   final tripRemoteDatasource = ref.read(tripRemoteDatasourceProvider);
   final serverTimeService = ref.read(serverTimeServiceProvider);
+  final networkInfo = ref.read(networkInfoProvider);
+  final operationsQueue = ref.read(offlineOperationsQueueProvider);
+
   return TripRepository(
     tripLocalDatasource: tripLocalDatasource,
     tripRemoteDatasource: tripRemoteDatasource,
     serverTimeService: serverTimeService,
+    networkInfo: networkInfo,
+    operationsQueue: operationsQueue,
   );
 });
 
@@ -30,14 +38,20 @@ class TripRepository implements ITripRepository {
   final ITripDataSource _tripLocalDataSource;
   final ITripRemoteDataSource _tripRemoteDataSource;
   final ServerTimeService _serverTimeService;
+  final NetworkInfo _networkInfo;
+  final OfflineOperationsQueue _operationsQueue;
 
   TripRepository({
     required ITripDataSource tripLocalDatasource,
     required ITripRemoteDataSource tripRemoteDatasource,
     required ServerTimeService serverTimeService,
+    required NetworkInfo networkInfo,
+    required OfflineOperationsQueue operationsQueue,
   }) : _tripLocalDataSource = tripLocalDatasource,
        _tripRemoteDataSource = tripRemoteDatasource,
-       _serverTimeService = serverTimeService;
+       _serverTimeService = serverTimeService,
+       _networkInfo = networkInfo,
+       _operationsQueue = operationsQueue;
 
   String _mapTravelTypeForApi(String? value) {
     final normalized = (value ?? '').trim().toLowerCase();
@@ -83,59 +97,111 @@ class TripRepository implements ITripRepository {
   Future<Either<Failure, bool>> createTrip(TripEntity trip) async {
     print('🟠 [TripRepository] createTrip called');
     print('   Trip: ${trip.tripName}');
-    try {
-      // Convert entity to JSON for API
-      final tripData = {
-        'tripName': trip.tripName,
-        'destination': trip.destination,
-        'startDate': trip.startDate.toIso8601String(),
-        'endDate': trip.endDate.toIso8601String(),
-        if (trip.description != null) 'description': trip.description,
-        if (trip.category != null) 'category': trip.category,
-        if (trip.media != null) 'media': trip.media,
-        if (trip.mediaType != null) 'mediaType': trip.mediaType,
-        'status': _mapStatusForApi(trip.status),
-        // Required backend fields
-        if (trip.budget != null) 'budget': trip.budget,
-        'travelType': _mapTravelTypeForApi(trip.travelType),
-        'groupSize': _resolveGroupSize(trip),
-      };
 
-      print('🟠 [TripRepository] Calling remote datasource with data:');
-      print('   $tripData');
-      print('   Image path: ${trip.media}');
+    // Check network connectivity
+    final isConnected = await _networkInfo.isConnected;
 
-      // Call remote API with image upload if media is provided
-      final apiModel = await _tripRemoteDataSource.createTrip(
-        tripData: tripData,
-        imagePaths: trip.media != null ? [trip.media!] : null,
-      );
+    // Convert entity to JSON for API
+    final tripData = {
+      'tripName': trip.tripName,
+      'destination': trip.destination,
+      'startDate': trip.startDate.toIso8601String(),
+      'endDate': trip.endDate.toIso8601String(),
+      if (trip.description != null) 'description': trip.description,
+      if (trip.category != null) 'category': trip.category,
+      if (trip.media != null) 'media': trip.media,
+      if (trip.mediaType != null) 'mediaType': trip.mediaType,
+      'status': _mapStatusForApi(trip.status),
+      if (trip.budget != null) 'budget': trip.budget,
+      'travelType': _mapTravelTypeForApi(trip.travelType),
+      'groupSize': _resolveGroupSize(trip),
+    };
 
-      print('✅ [TripRepository] Remote API call SUCCESS');
-      print('   Returned trip ID: ${apiModel.id}');
-
-      // Save to local cache
+    if (isConnected) {
+      // Online: create on remote
       try {
-        final localModel = TripHiveModel.fromEntity(apiModel.toEntity());
-        await _tripLocalDataSource.createTrip(localModel);
-        print('✅ [TripRepository] Saved to local cache');
-      } catch (e) {
-        // Don't fail if local save fails
-        log('Failed to save to local cache: $e');
-      }
+        print('🟠 [TripRepository] Calling remote datasource with data:');
+        print('   $tripData');
+        print('   Image path: ${trip.media}');
 
-      return const Right(true);
-    } on ServerException catch (e) {
-      print('❌ [TripRepository] ServerException: ${e.message}');
-      return Left(ApiFailure(message: e.message));
-    } catch (e) {
-      print('❌ [TripRepository] Generic error: $e');
-      return Left(ApiFailure(message: e.toString()));
+        final apiModel = await _tripRemoteDataSource.createTrip(
+          tripData: tripData,
+          imagePaths: trip.media != null ? [trip.media!] : null,
+        );
+
+        print('✅ [TripRepository] Remote API call SUCCESS');
+        print('   Returned trip ID: ${apiModel.id}');
+
+        // Save to local cache
+        try {
+          final localModel = TripHiveModel.fromEntity(apiModel.toEntity());
+          await _tripLocalDataSource.createTrip(localModel);
+          print('✅ [TripRepository] Saved to local cache');
+        } catch (e) {
+          log('Failed to save to local cache: $e');
+        }
+
+        return const Right(true);
+      } on ServerException catch (e) {
+        print('❌ [TripRepository] ServerException: ${e.message}');
+        return Left(ApiFailure(message: e.message));
+      } catch (e) {
+        print('❌ [TripRepository] Generic error: $e');
+        return Left(ApiFailure(message: e.toString()));
+      }
+    } else {
+      // Offline: save locally and queue
+      print('📵 [TripRepository] Offline, queueing trip creation');
+
+      try {
+        // Create a trip model for local storage with a generated local ID.
+        final localModel = TripHiveModel.fromEntity(trip);
+        await _tripLocalDataSource.createTrip(localModel);
+
+        final localTripId =
+            localModel.tripId ??
+            DateTime.now().millisecondsSinceEpoch.toString();
+
+        // Queue operation for later sync
+        await _operationsQueue.queueOperation(
+          id: 'trip_create_$localTripId',
+          feature: 'trip',
+          type: OperationType.create,
+          data: {
+            'action': 'create_trip',
+            'tripData': tripData,
+            if (trip.media != null) 'imagePaths': [trip.media],
+          },
+        );
+
+        print('✅ [TripRepository] Trip queued and cached locally');
+        return const Right(true);
+      } catch (e) {
+        print('❌ [TripRepository] Failed to queue trip: $e');
+        return Left(ApiFailure(message: e.toString()));
+      }
     }
   }
 
   @override
   Future<Either<Failure, bool>> deleteTrip(String tripId) async {
+    final isConnected = await _networkInfo.isConnected;
+
+    if (!isConnected) {
+      try {
+        await _operationsQueue.queueOperation(
+          id: 'trip_delete_${DateTime.now().millisecondsSinceEpoch}',
+          feature: 'trip',
+          type: OperationType.delete,
+          data: {'action': 'delete_trip', 'tripId': tripId},
+        );
+        await _tripLocalDataSource.deleteTrip(tripId);
+        return const Right(true);
+      } catch (e) {
+        return Left(ApiFailure(message: e.toString()));
+      }
+    }
+
     try {
       // Delete from remote
       await _tripRemoteDataSource.deleteTrip(tripId);
@@ -158,94 +224,200 @@ class TripRepository implements ITripRepository {
 
   @override
   Future<Either<Failure, List<TripEntity>>> getAllTrips() async {
-    try {
-      // Fetch from remote API
-      final response = await _tripRemoteDataSource.getAllTrips(limit: 200);
-      log('getAllTrips: Received ${response.data.length} trips from API');
-      final entities = response.data.map((model) => model.toEntity()).toList();
+    // Check network connectivity first
+    final isConnected = await _networkInfo.isConnected;
 
-      // Sync server time from API response (use the most recent timestamp available)
+    if (isConnected) {
+      // Online: try remote first
       try {
-        if (response.data.isNotEmpty) {
-          final serverTimestamp = response.data
-              .map((model) => model.updatedAt ?? model.createdAt)
-              .whereType<DateTime>()
-              .fold<DateTime?>(
-                null,
-                (prev, current) =>
-                    prev == null || current.isAfter(prev) ? current : prev,
-              );
+        final response = await _tripRemoteDataSource.getAllTrips(limit: 200);
+        log('getAllTrips: Received ${response.data.length} trips from API');
+        final entities = response.data
+            .map((model) => model.toEntity())
+            .toList();
 
-          if (serverTimestamp != null) {
-            _serverTimeService.syncWithServerTime(serverTimestamp);
+        // Sync server time from API response
+        try {
+          if (response.data.isNotEmpty) {
+            final serverTimestamp = response.data
+                .map((model) => model.updatedAt ?? model.createdAt)
+                .whereType<DateTime>()
+                .fold<DateTime?>(
+                  null,
+                  (prev, current) =>
+                      prev == null || current.isAfter(prev) ? current : prev,
+                );
+
+            if (serverTimestamp != null) {
+              _serverTimeService.syncWithServerTime(serverTimestamp);
+            }
           }
+        } catch (e) {
+          log('Failed to sync server time: $e');
+        }
+
+        log(
+          'getAllTrips: Converted to entities: ${entities.map((e) => {"name": e.tripName, "budget": e.budget, "members": e.groupSizeMax, "rating": e.averageRating}).toList()}',
+        );
+
+        // Update local cache in background
+        _updateLocalCache(entities);
+
+        return Right(entities);
+      } on ServerException catch (e) {
+        // Remote failed, try cache fallback
+        print('⚠️ [TripRepo] Remote failed, trying cache...');
+        try {
+          final models = await _tripLocalDataSource.getAllTrips();
+          final entities = models.map((model) => model.toEntity()).toList();
+          print('✅ [TripRepo] Using cached trips (${entities.length})');
+          return Right(entities);
+        } catch (localError) {
+          return Left(ApiFailure(message: e.message));
         }
       } catch (e) {
-        log('Failed to sync server time: $e');
+        // Try cache fallback for any error
+        print('⚠️ [TripRepo] Error: $e, trying cache...');
+        try {
+          final models = await _tripLocalDataSource.getAllTrips();
+          final entities = models.map((model) => model.toEntity()).toList();
+          return Right(entities);
+        } catch (localError) {
+          return Left(ApiFailure(message: e.toString()));
+        }
       }
-
-      log(
-        'getAllTrips: Converted to entities: ${entities.map((e) => {"name": e.tripName, "budget": e.budget, "members": e.groupSizeMax, "rating": e.averageRating}).toList()}',
-      );
-
-      // Update local cache in background
-      _updateLocalCache(entities);
-
-      return Right(entities);
-    } on ServerException catch (e) {
-      // If remote fails, try local cache
+    } else {
+      // Offline: use cache directly
+      print('📵 [TripRepo] Offline, using cached trips');
       try {
         final models = await _tripLocalDataSource.getAllTrips();
         final entities = models.map((model) => model.toEntity()).toList();
+        print('✅ [TripRepo] Loaded ${entities.length} trips from cache');
         return Right(entities);
-      } catch (localError) {
-        return Left(ApiFailure(message: e.message));
+      } catch (e) {
+        return Left(
+          NetworkFailure(message: 'No internet connection and no cached data'),
+        );
       }
-    } catch (e) {
-      return Left(ApiFailure(message: e.toString()));
     }
   }
 
   @override
   Future<Either<Failure, TripEntity>> getTripById(String tripId) async {
-    try {
-      // Fetch from remote API
-      final apiModel = await _tripRemoteDataSource.getTripById(tripId);
-      final entity = apiModel.toEntity();
+    // Check network connectivity first
+    final isConnected = await _networkInfo.isConnected;
 
-      // Sync server time from API response
-      final serverTimestamp = apiModel.updatedAt ?? apiModel.createdAt;
-      if (serverTimestamp != null) {
-        _serverTimeService.syncWithServerTime(serverTimestamp);
-      }
-
-      // Update local cache
+    if (isConnected) {
+      // Online: try remote first
       try {
-        final localModel = TripHiveModel.fromEntity(entity);
-        await _tripLocalDataSource.updateTrip(localModel);
-      } catch (e) {
-        log('Failed to update local cache: $e');
-      }
+        final apiModel = await _tripRemoteDataSource.getTripById(tripId);
+        final entity = apiModel.toEntity();
 
-      return Right(entity);
-    } on ServerException catch (e) {
-      // If remote fails, try local cache
+        // Sync server time from API response
+        final serverTimestamp = apiModel.updatedAt ?? apiModel.createdAt;
+        if (serverTimestamp != null) {
+          _serverTimeService.syncWithServerTime(serverTimestamp);
+        }
+
+        // Update local cache
+        try {
+          final localModel = TripHiveModel.fromEntity(entity);
+          await _tripLocalDataSource.updateTrip(localModel);
+        } catch (e) {
+          log('Failed to update local cache: $e');
+        }
+
+        return Right(entity);
+      } on ServerException catch (e) {
+        // Remote failed, try cache fallback
+        print('⚠️ [TripRepo] Remote failed, trying cache for trip: $tripId');
+        try {
+          final model = await _tripLocalDataSource.getTripById(tripId);
+          if (model != null) {
+            print('✅ [TripRepo] Using cached trip');
+            return Right(model.toEntity());
+          }
+          return Left(ApiFailure(message: e.message));
+        } catch (localError) {
+          return Left(ApiFailure(message: e.message));
+        }
+      } catch (e) {
+        // Try cache fallback for any error
+        print('⚠️ [TripRepo] Error: $e, trying cache for trip: $tripId');
+        try {
+          final model = await _tripLocalDataSource.getTripById(tripId);
+          if (model != null) {
+            return Right(model.toEntity());
+          }
+          return Left(ApiFailure(message: e.toString()));
+        } catch (localError) {
+          return Left(ApiFailure(message: e.toString()));
+        }
+      }
+    } else {
+      // Offline: use cache directly
+      print('📵 [TripRepo] Offline, using cached trip: $tripId');
       try {
         final model = await _tripLocalDataSource.getTripById(tripId);
         if (model != null) {
           return Right(model.toEntity());
         }
-        return Left(ApiFailure(message: e.message));
-      } catch (localError) {
-        return Left(ApiFailure(message: e.message));
+        return Left(
+          NetworkFailure(message: 'No internet connection and trip not cached'),
+        );
+      } catch (e) {
+        return Left(
+          NetworkFailure(message: 'No internet connection and no cached data'),
+        );
       }
-    } catch (e) {
-      return Left(ApiFailure(message: e.toString()));
     }
   }
 
   @override
   Future<Either<Failure, bool>> updateTrip(TripEntity trip) async {
+    final isConnected = await _networkInfo.isConnected;
+
+    if (!isConnected) {
+      try {
+        if (trip.tripId == null) {
+          return const Left(ApiFailure(message: 'Trip ID is required'));
+        }
+
+        final tripData = {
+          'tripName': trip.tripName,
+          'destination': trip.destination,
+          'startDate': trip.startDate.toIso8601String(),
+          'endDate': trip.endDate.toIso8601String(),
+          if (trip.description != null) 'description': trip.description,
+          if (trip.category != null) 'category': trip.category,
+          if (trip.media != null) 'media': trip.media,
+          if (trip.mediaType != null) 'mediaType': trip.mediaType,
+          'status': _mapStatusForApi(trip.status),
+          if (trip.budget != null) 'budget': trip.budget,
+          'travelType': _mapTravelTypeForApi(trip.travelType),
+          'groupSize': _resolveGroupSize(trip),
+        };
+
+        await _operationsQueue.queueOperation(
+          id: 'trip_update_${trip.tripId}_${DateTime.now().millisecondsSinceEpoch}',
+          feature: 'trip',
+          type: OperationType.update,
+          data: {
+            'action': 'update_trip',
+            'tripId': trip.tripId,
+            'tripData': tripData,
+            if (trip.media != null) 'imagePaths': [trip.media],
+          },
+        );
+
+        final localModel = TripHiveModel.fromEntity(trip);
+        await _tripLocalDataSource.updateTrip(localModel);
+        return const Right(true);
+      } catch (e) {
+        return Left(ApiFailure(message: e.toString()));
+      }
+    }
+
     try {
       if (trip.tripId == null) {
         return const Left(ApiFailure(message: 'Trip ID is required'));
@@ -295,151 +467,205 @@ class TripRepository implements ITripRepository {
   Future<Either<Failure, List<TripEntity>>> getTripsByUser(
     String userId,
   ) async {
-    try {
-      // Fetch from remote API
-      final response = await _tripRemoteDataSource.getTripsByCreator(
-        userId: userId,
-        limit: 50,
-      );
-      final entities = response.data.map((model) => model.toEntity()).toList();
+    final isConnected = await _networkInfo.isConnected;
 
-      // Sync server time from API response
-      if (response.data.isNotEmpty) {
-        final serverTimestamp = response.data
-            .map((model) => model.updatedAt ?? model.createdAt)
-            .whereType<DateTime>()
-            .fold<DateTime?>(
-              null,
-              (prev, current) =>
-                  prev == null || current.isAfter(prev) ? current : prev,
-            );
-
-        if (serverTimestamp != null) {
-          _serverTimeService.syncWithServerTime(serverTimestamp);
-        }
-      }
-
-      return Right(entities);
-    } on ServerException catch (e) {
-      // If remote fails, try local cache
+    if (isConnected) {
       try {
-        final models = await _tripLocalDataSource.getMyTrips(userId);
-        final entities = models.map((model) => model.toEntity()).toList();
+        final response = await _tripRemoteDataSource.getTripsByCreator(
+          userId: userId,
+          limit: 50,
+        );
+        final entities = response.data
+            .map((model) => model.toEntity())
+            .toList();
+
+        if (response.data.isNotEmpty) {
+          final serverTimestamp = response.data
+              .map((model) => model.updatedAt ?? model.createdAt)
+              .whereType<DateTime>()
+              .fold<DateTime?>(
+                null,
+                (prev, current) =>
+                    prev == null || current.isAfter(prev) ? current : prev,
+              );
+
+          if (serverTimestamp != null) {
+            _serverTimeService.syncWithServerTime(serverTimestamp);
+          }
+        }
+
+        _updateLocalCache(entities);
         return Right(entities);
-      } catch (localError) {
-        return Left(ApiFailure(message: e.message));
+      } on ServerException catch (e) {
+        final fallback = await _getCachedTripsByUser(userId);
+        return fallback ?? Left(ApiFailure(message: e.message));
+      } catch (e) {
+        final fallback = await _getCachedTripsByUser(userId);
+        return fallback ?? Left(ApiFailure(message: e.toString()));
       }
-    } catch (e) {
-      return Left(ApiFailure(message: e.toString()));
     }
+
+    final fallback = await _getCachedTripsByUser(userId);
+    return fallback ??
+        const Left(
+          NetworkFailure(message: 'No internet connection and no cached trips'),
+        );
   }
 
   @override
   Future<Either<Failure, List<TripEntity>>> getJoinedTrips(
     String userId,
   ) async {
-    try {
-      // Fetch trips where user is a member
-      final response = await _tripRemoteDataSource.getJoinedTrips(
-        userId: userId,
-        limit: 50,
-      );
-      final entities = response.data.map((model) => model.toEntity()).toList();
+    final isConnected = await _networkInfo.isConnected;
 
-      // Sync server time from API response
-      if (response.data.isNotEmpty) {
-        final serverTimestamp = response.data
-            .map((model) => model.updatedAt ?? model.createdAt)
-            .whereType<DateTime>()
-            .fold<DateTime?>(
-              null,
-              (prev, current) =>
-                  prev == null || current.isAfter(prev) ? current : prev,
-            );
+    if (isConnected) {
+      try {
+        final response = await _tripRemoteDataSource.getJoinedTrips(
+          userId: userId,
+          limit: 50,
+        );
+        final entities = response.data
+            .map((model) => model.toEntity())
+            .toList();
 
-        if (serverTimestamp != null) {
-          _serverTimeService.syncWithServerTime(serverTimestamp);
+        if (response.data.isNotEmpty) {
+          final serverTimestamp = response.data
+              .map((model) => model.updatedAt ?? model.createdAt)
+              .whereType<DateTime>()
+              .fold<DateTime?>(
+                null,
+                (prev, current) =>
+                    prev == null || current.isAfter(prev) ? current : prev,
+              );
+
+          if (serverTimestamp != null) {
+            _serverTimeService.syncWithServerTime(serverTimestamp);
+          }
         }
-      }
 
-      return Right(entities);
-    } on ServerException catch (e) {
-      return Left(ApiFailure(message: e.message));
-    } catch (e) {
-      return Left(ApiFailure(message: e.toString()));
+        _updateLocalCache(entities);
+        return Right(entities);
+      } on ServerException catch (e) {
+        final fallback = await _getCachedJoinedTrips(userId);
+        return fallback ?? Left(ApiFailure(message: e.message));
+      } catch (e) {
+        final fallback = await _getCachedJoinedTrips(userId);
+        return fallback ?? Left(ApiFailure(message: e.toString()));
+      }
     }
+
+    final fallback = await _getCachedJoinedTrips(userId);
+    return fallback ??
+        const Left(
+          NetworkFailure(message: 'No internet connection and no cached trips'),
+        );
   }
 
   @override
   Future<Either<Failure, List<TripEntity>>> getPlannedTrips() async {
-    try {
-      // Fetch from remote API with search filter
-      final response = await _tripRemoteDataSource.searchTrips(limit: 50);
-      final entities = response.data
-          .where((model) => model.status == 'planned')
-          .map((model) => model.toEntity())
-          .toList();
+    final isConnected = await _networkInfo.isConnected;
 
-      // Sync server time from API response
-      if (response.data.isNotEmpty) {
-        final serverTimestamp = response.data
-            .map((model) => model.updatedAt ?? model.createdAt)
-            .whereType<DateTime>()
-            .fold<DateTime?>(
-              null,
-              (prev, current) =>
-                  prev == null || current.isAfter(prev) ? current : prev,
-            );
+    if (isConnected) {
+      try {
+        final response = await _tripRemoteDataSource.searchTrips(limit: 50);
+        final entities = response.data
+            .where((model) => model.status == 'planned')
+            .map((model) => model.toEntity())
+            .toList();
 
-        if (serverTimestamp != null) {
-          _serverTimeService.syncWithServerTime(serverTimestamp);
+        if (response.data.isNotEmpty) {
+          final serverTimestamp = response.data
+              .map((model) => model.updatedAt ?? model.createdAt)
+              .whereType<DateTime>()
+              .fold<DateTime?>(
+                null,
+                (prev, current) =>
+                    prev == null || current.isAfter(prev) ? current : prev,
+              );
+
+          if (serverTimestamp != null) {
+            _serverTimeService.syncWithServerTime(serverTimestamp);
+          }
         }
-      }
 
-      return Right(entities);
-    } on ServerException catch (e) {
-      return Left(ApiFailure(message: e.message));
-    } catch (e) {
-      return Left(ApiFailure(message: e.toString()));
+        _updateLocalCache(entities);
+        return Right(entities);
+      } on ServerException catch (e) {
+        final fallback = await _getCachedTripsByStatus(TripStatus.planned);
+        return fallback ?? Left(ApiFailure(message: e.message));
+      } catch (e) {
+        final fallback = await _getCachedTripsByStatus(TripStatus.planned);
+        return fallback ?? Left(ApiFailure(message: e.toString()));
+      }
     }
+
+    final fallback = await _getCachedTripsByStatus(TripStatus.planned);
+    return fallback ??
+        const Left(
+          NetworkFailure(message: 'No internet connection and no cached trips'),
+        );
   }
 
   @override
   Future<Either<Failure, List<TripEntity>>> getCompletedTrips() async {
-    try {
-      // Fetch from remote API with search filter
-      final response = await _tripRemoteDataSource.searchTrips(limit: 50);
-      final entities = response.data
-          .where((model) => model.status == 'completed')
-          .map((model) => model.toEntity())
-          .toList();
+    final isConnected = await _networkInfo.isConnected;
 
-      return Right(entities);
-    } on ServerException catch (e) {
-      return Left(ApiFailure(message: e.message));
-    } catch (e) {
-      return Left(ApiFailure(message: e.toString()));
+    if (isConnected) {
+      try {
+        final response = await _tripRemoteDataSource.searchTrips(limit: 50);
+        final entities = response.data
+            .where((model) => model.status == 'completed')
+            .map((model) => model.toEntity())
+            .toList();
+
+        _updateLocalCache(entities);
+        return Right(entities);
+      } on ServerException catch (e) {
+        final fallback = await _getCachedTripsByStatus(TripStatus.completed);
+        return fallback ?? Left(ApiFailure(message: e.message));
+      } catch (e) {
+        final fallback = await _getCachedTripsByStatus(TripStatus.completed);
+        return fallback ?? Left(ApiFailure(message: e.toString()));
+      }
     }
+
+    final fallback = await _getCachedTripsByStatus(TripStatus.completed);
+    return fallback ??
+        const Left(
+          NetworkFailure(message: 'No internet connection and no cached trips'),
+        );
   }
 
   @override
   Future<Either<Failure, List<TripEntity>>> getTripsByCategory(
     String categoryId,
   ) async {
-    try {
-      // Fetch from remote API
-      final response = await _tripRemoteDataSource.getAllTrips(limit: 200);
-      final entities = response.data
-          .where((model) => model.category == categoryId)
-          .map((model) => model.toEntity())
-          .toList();
+    final isConnected = await _networkInfo.isConnected;
 
-      return Right(entities);
-    } on ServerException catch (e) {
-      return Left(ApiFailure(message: e.message));
-    } catch (e) {
-      return Left(ApiFailure(message: e.toString()));
+    if (isConnected) {
+      try {
+        final response = await _tripRemoteDataSource.getAllTrips(limit: 200);
+        final entities = response.data
+            .where((model) => model.category == categoryId)
+            .map((model) => model.toEntity())
+            .toList();
+
+        _updateLocalCache(entities);
+        return Right(entities);
+      } on ServerException catch (e) {
+        final fallback = await _getCachedTripsByCategory(categoryId);
+        return fallback ?? Left(ApiFailure(message: e.message));
+      } catch (e) {
+        final fallback = await _getCachedTripsByCategory(categoryId);
+        return fallback ?? Left(ApiFailure(message: e.toString()));
+      }
     }
+
+    final fallback = await _getCachedTripsByCategory(categoryId);
+    return fallback ??
+        const Left(
+          NetworkFailure(message: 'No internet connection and no cached trips'),
+        );
   }
 
   @override
@@ -462,6 +688,27 @@ class TripRepository implements ITripRepository {
     required String userId,
     String? message,
   }) async {
+    final isConnected = await _networkInfo.isConnected;
+
+    if (!isConnected) {
+      try {
+        await _operationsQueue.queueOperation(
+          id: 'trip_join_${tripId}_${DateTime.now().millisecondsSinceEpoch}',
+          feature: 'trip',
+          type: OperationType.create,
+          data: {
+            'action': 'join_request',
+            'tripId': tripId,
+            'userId': userId,
+            if (message != null && message.isNotEmpty) 'message': message,
+          },
+        );
+        return const Right(true);
+      } catch (e) {
+        return Left(ApiFailure(message: e.toString()));
+      }
+    }
+
     try {
       await _tripRemoteDataSource.sendJoinRequest(
         tripId: tripId,
@@ -473,6 +720,71 @@ class TripRepository implements ITripRepository {
       return Left(ApiFailure(message: e.message));
     } catch (e) {
       return Left(ApiFailure(message: e.toString()));
+    }
+  }
+
+  Future<Either<Failure, List<TripEntity>>?> _getCachedTripsByUser(
+    String userId,
+  ) async {
+    try {
+      final models = await _tripLocalDataSource.getMyTrips(userId);
+      return Right(models.map((model) => model.toEntity()).toList());
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<Either<Failure, List<TripEntity>>?> _getCachedJoinedTrips(
+    String userId,
+  ) async {
+    try {
+      final models = await _tripLocalDataSource.getAllTrips();
+      final entities = models.map((model) => model.toEntity()).toList();
+
+      final joinedFromMembers = entities
+          .where(
+            (trip) =>
+                trip.members?.any((member) => member.userId == userId) ?? false,
+          )
+          .toList();
+      if (joinedFromMembers.isNotEmpty) {
+        return Right(joinedFromMembers);
+      }
+
+      // Fallback approximation for legacy cached trips without members data.
+      return Right(entities.where((trip) => trip.createdBy != userId).toList());
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<Either<Failure, List<TripEntity>>?> _getCachedTripsByStatus(
+    TripStatus status,
+  ) async {
+    try {
+      final models = await _tripLocalDataSource.getAllTrips();
+      final entities = models
+          .map((model) => model.toEntity())
+          .where((trip) => trip.status == status)
+          .toList();
+      return Right(entities);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<Either<Failure, List<TripEntity>>?> _getCachedTripsByCategory(
+    String categoryId,
+  ) async {
+    try {
+      final models = await _tripLocalDataSource.getAllTrips();
+      final entities = models
+          .map((model) => model.toEntity())
+          .where((trip) => trip.category == categoryId)
+          .toList();
+      return Right(entities);
+    } catch (_) {
+      return null;
     }
   }
 
@@ -542,6 +854,28 @@ class TripRepository implements ITripRepository {
     required String tripId,
     required List<Map<String, dynamic>> itinerary,
   }) async {
+    final isConnected = await _networkInfo.isConnected;
+
+    if (!isConnected) {
+      try {
+        await _operationsQueue.queueOperation(
+          id: 'trip_itinerary_${tripId}_${DateTime.now().millisecondsSinceEpoch}',
+          feature: 'trip',
+          type: OperationType.update,
+          data: {
+            'action': 'update_itinerary',
+            'tripId': tripId,
+            'itinerary': itinerary,
+          },
+        );
+        return const Right(true);
+      } catch (e) {
+        return Left(
+          ApiFailure(message: 'Failed to queue itinerary update: $e'),
+        );
+      }
+    }
+
     try {
       await _tripRemoteDataSource.updateItinerary(
         tripId: tripId,
@@ -622,6 +956,28 @@ class TripRepository implements ITripRepository {
     required String tripId,
     required List<Map<String, dynamic>> checklist,
   }) async {
+    final isConnected = await _networkInfo.isConnected;
+
+    if (!isConnected) {
+      try {
+        await _operationsQueue.queueOperation(
+          id: 'trip_checklist_${tripId}_${DateTime.now().millisecondsSinceEpoch}',
+          feature: 'trip',
+          type: OperationType.update,
+          data: {
+            'action': 'update_checklist',
+            'tripId': tripId,
+            'checklist': checklist,
+          },
+        );
+        return const Right(true);
+      } catch (e) {
+        return Left(
+          ApiFailure(message: 'Failed to queue checklist update: $e'),
+        );
+      }
+    }
+
     try {
       await _tripRemoteDataSource.updateChecklist(
         tripId: tripId,

@@ -5,16 +5,21 @@ import 'package:tripmates/core/services/storage/token_service.dart';
 import 'package:tripmates/core/services/storage/user_session_service.dart';
 import 'package:tripmates/features/auth/data/datasources/auth_datasource.dart';
 import 'package:tripmates/features/auth/data/models/auth_hive_model.dart';
+import 'package:tripmates/features/profile/data/datasources/local/profile_local_datasource.dart';
+import 'package:tripmates/features/profile/data/repositories/profile_repository.dart';
+import 'package:tripmates/features/profile/domain/entities/profile_entity.dart';
 
 // Create provider
 final authLocalDatasourceProvider = Provider<AuthLocalDatasource>((ref) {
   final hiveService = ref.read(hiveServiceProvider);
   final userSessionService = ref.read(userSessionServiceProvider);
   final tokenService = ref.read(tokenServiceProvider);
+  final profileLocalDataSource = ref.read(profileLocalDataSourceProvider);
   return AuthLocalDatasource(
     hiveService: hiveService,
     userSessionService: userSessionService,
     tokenService: tokenService,
+    profileLocalDataSource: profileLocalDataSource,
   );
 });
 
@@ -22,14 +27,17 @@ class AuthLocalDatasource implements IAuthLocalDataSource {
   final HiveService _hiveService;
   final UserSessionService _userSessionService;
   final TokenService _tokenService;
+  final IProfileLocalDataSource _profileLocalDataSource;
 
   AuthLocalDatasource({
     required HiveService hiveService,
     required UserSessionService userSessionService,
     required TokenService tokenService,
+    required IProfileLocalDataSource profileLocalDataSource,
   }) : _hiveService = hiveService,
        _userSessionService = userSessionService,
-       _tokenService = tokenService;
+       _tokenService = tokenService,
+       _profileLocalDataSource = profileLocalDataSource;
 
   @override
   Future<AuthHiveModel> register(AuthHiveModel user) async {
@@ -50,6 +58,17 @@ class AuthLocalDatasource implements IAuthLocalDataSource {
           phoneNumber: user.phoneNumber,
           batchId: user.batchId,
           profilePicture: user.profilePicture,
+        );
+
+        // Also ensure profile is cached for offline profile viewing
+        await _profileLocalDataSource.cacheProfile(
+          ProfileEntity(
+            userId: user.authId,
+            fullName: user.fullName,
+            email: user.email,
+            phone: user.phoneNumber,
+            profilePicture: user.profilePicture,
+          ),
         );
       }
       return user;

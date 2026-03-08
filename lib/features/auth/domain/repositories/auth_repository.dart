@@ -11,8 +11,15 @@ abstract interface class IAuthRepository {
     String email, {
     String? platform,
   });
+  Future<Either<Failure, bool>> verifyOTP(String email, String otp);
   Future<Either<Failure, bool>> resetPassword(
     String token,
+    String password,
+    String confirmPassword,
+  );
+  Future<Either<Failure, bool>> resetPasswordWithOTP(
+    String email,
+    String otp,
     String password,
     String confirmPassword,
   );
